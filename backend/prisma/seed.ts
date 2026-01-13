@@ -34,9 +34,10 @@ process.env.DATABASE_URL = databaseUrl;
 console.log('✅ DATABASE_URL:', databaseUrl.replace(/:[^:@]+@/, ':****@'));
 
 // Now import PrismaClient
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, HousingStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+// Prisma 6 - normal initialization
 const prisma = new PrismaClient();
 
 // Helper function to generate random Malaysian IC
@@ -84,6 +85,8 @@ const streets = [
   'Jalan Kelibang', 'Jalan Kampung Kok', 'Jalan Datai', 'Jalan Pantai Kok',
   'Jalan Telaga Harbour', 'Jalan Bohor', 'Jalan Padang Gaong'
 ];
+
+const occupations = ['Berniaga', 'Guru', 'Kerani', 'Pemandu', 'Petani', 'Nelayan', 'Swasta'];
 
 async function main() {
   console.log('🌱 Starting seed with sample data...');
@@ -161,7 +164,7 @@ async function main() {
     'Lain-lain',
   ];
 
-  const createdDisabilityTypes = [];
+  const createdDisabilityTypes: any[] = [];
   for (const typeName of disabilityTypes) {
     const dt = await prisma.disabilityType.upsert({
       where: { name: typeName },
@@ -175,32 +178,7 @@ async function main() {
   // Create Sample Households
   console.log('🏠 Creating sample households...');
 
-  const incomeRanges = [
-    'KURANG_RM2000',
-    'RM2000_RM3999',
-    'RM4000_RM5999',
-    'RM6000_RM9999',
-    'RM10000_LEBIH',
-  ];
-
-  const housingStatuses = [
-    'RUMAH_SENDIRI',
-    'SEWA',
-    'RUMAH_KERAJAAN',
-    'RUMAH_IBUBAPASUAMI',
-    'RUMAH_IBUBAPAISTERI',
-    'LAINLAIN',
-  ];
-
-  const employmentStatuses = [
-    'BEKERJA_SEPENUH_MASA',
-    'BEKERJA_SEPARUH_MASA',
-    'BEKERJA_SENDIRI',
-    'PENGANGGUR',
-    'PESARA',
-    'PELAJAR',
-    'SURI_RUMAH',
-  ];
+  const housingStatuses: HousingStatus[] = ['SENDIRI', 'SEWA'];
 
   // Create 50 sample households with variety
   for (let i = 0; i < 50; i++) {
@@ -217,34 +195,29 @@ async function main() {
     const household = await prisma.household.create({
       data: {
         masjidId: masjid.id,
-        headOfHouseholdName: headName,
-        headOfHouseholdIC: headIC,
       },
     });
 
     // Create household version (initial)
     const numDependents = Math.floor(Math.random() * 5); // 0-4 dependents
     const hasOKU = Math.random() > 0.85; // 15% chance of having OKU member
-    const incomeRange = incomeRanges[Math.floor(Math.random() * incomeRanges.length)];
     const housingStatus = housingStatuses[Math.floor(Math.random() * housingStatuses.length)];
+    const netIncome = Math.floor(Math.random() * 10000) + 1000; // 1000-11000
 
     const version = await prisma.householdVersion.create({
       data: {
         householdId: household.id,
-        versionNumber: 1,
-        headOfHouseholdName: headName,
-        headOfHouseholdIC: headIC,
-        headOfHouseholdPhone: generatePhone(),
-        headOfHouseholdEmail: ``,
-        residentialAddress: `${houseNumber}, ${street}`,
-        residentialPostcode: '07100',
-        residentialState: 'Kedah',
-        employmentStatus: employmentStatuses[Math.floor(Math.random() * employmentStatuses.length)],
-        employerName: Math.random() > 0.5 ? 'Swasta' : '',
-        monthlyIncome: incomeRange,
+        versionNo: 1,
+        createdByUserId: adminUser.id,
+        applicantName: headName,
+        icNo: headIC,
+        phone: generatePhone(),
+        address: `${houseNumber}, ${street}, 07100 Langkawi, Kedah`,
+        netIncome: netIncome,
         housingStatus: housingStatus,
-        numberOfDependents: numDependents,
-        submittedBy: adminUser.id,
+        assistanceReceived: Math.random() > 0.7,
+        assistanceProviderText: Math.random() > 0.5 ? 'JKM' : 'Zakat',
+        disabilityInFamily: hasOKU,
       },
     });
 
@@ -259,13 +232,22 @@ async function main() {
       const depName = childNames[Math.floor(Math.random() * childNames.length)];
       const age = Math.floor(Math.random() * 20) + 1; // 1-20 years old
 
+      // Create person first
+      const person = await prisma.person.create({
+        data: {
+          fullName: depName,
+          icNo: age >= 12 ? generateIC() : null,
+          phone: age >= 18 ? generatePhone() : null,
+        },
+      });
+
+      // Link to household version
       await prisma.householdVersionDependent.create({
         data: {
-          versionId: version.id,
-          name: depName,
-          icNumber: age >= 12 ? generateIC() : '',
-          relationshipToHead: j === 0 ? 'ANAK' : Math.random() > 0.5 ? 'ANAK' : 'CUCU',
-          age: age,
+          householdVersionId: version.id,
+          personId: person.id,
+          relationship: j === 0 ? 'Anak' : Math.random() > 0.5 ? 'Anak' : 'Cucu',
+          occupation: age >= 18 ? occupations[Math.floor(Math.random() * occupations.length)] : 'Pelajar',
         },
       });
     }
@@ -274,13 +256,20 @@ async function main() {
     if (hasOKU) {
       const disabilityType = createdDisabilityTypes[Math.floor(Math.random() * createdDisabilityTypes.length)];
       
+      // Create person for OKU member
+      const okuPerson = await prisma.person.create({
+        data: {
+          fullName: Math.random() > 0.5 ? headName : childNames[Math.floor(Math.random() * childNames.length)],
+          icNo: generateIC(),
+        },
+      });
+
       await prisma.householdVersionDisabilityMember.create({
         data: {
-          versionId: version.id,
-          name: Math.random() > 0.5 ? headName : childNames[Math.floor(Math.random() * childNames.length)],
-          icNumber: generateIC(),
+          householdVersionId: version.id,
+          personId: okuPerson.id,
           disabilityTypeId: disabilityType.id,
-          requiresAssistance: Math.random() > 0.5,
+          notesText: 'Memerlukan bantuan',
         },
       });
     }
@@ -293,23 +282,14 @@ async function main() {
 
       await prisma.householdVersionEmergencyContact.create({
         data: {
-          versionId: version.id,
+          householdVersionId: version.id,
           name: contactName,
           relationship: Math.random() > 0.5 ? 'Adik-beradik' : 'Ibu bapa',
-          phoneNumber: generatePhone(),
+          phone: generatePhone(),
+          icNo: generateIC(),
         },
       });
     }
-
-    // Create submission record
-    await prisma.submission.create({
-      data: {
-        householdId: household.id,
-        versionId: version.id,
-        submittedBy: adminUser.id,
-        submittedAt: new Date(Date.now() - Math.floor(Math.random() * 180) * 24 * 60 * 60 * 1000), // Random date within last 6 months
-      },
-    });
 
     if ((i + 1) % 10 === 0) {
       console.log(`   Created ${i + 1} households...`);
@@ -328,11 +308,11 @@ async function main() {
   console.log('');
   console.log('📊 Sample data created:');
   console.log('   - 50 households');
-  console.log('   - Various income ranges (analytics ready)');
+  console.log('   - Various income ranges (RM1000-RM11000)');
   console.log('   - OKU members (15% of households)');
   console.log('   - Dependents (0-4 per household)');
   console.log('   - Emergency contacts (70% of households)');
-  console.log('   - Submission history (last 6 months)');
+  console.log('   - Housing status variety (Own/Rent)');
   console.log('');
   console.log('⚠️  Change passwords in production!');
 }

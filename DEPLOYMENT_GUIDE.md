@@ -244,7 +244,7 @@ sudo -u postgres psql
 
 # Create database and user
 CREATE DATABASE mkcs_db;
-CREATE USER mkcs_user WITH PASSWORD 'Masjid_5792';
+
 GRANT ALL PRIVILEGES ON DATABASE mkcs_db TO mkcs_user;
 \q
 ```
