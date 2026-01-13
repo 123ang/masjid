@@ -1,0 +1,321 @@
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateHouseholdDto } from './dto/create-household.dto';
+import { UpdateHouseholdDto } from './dto/update-household.dto';
+
+@Injectable()
+export class HouseholdService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createHouseholdDto: CreateHouseholdDto, userId: string, masjidId: string) {
+    // Check for duplicate IC if provided
+    if (createHouseholdDto.icNo) {
+      const existing = await this.checkIcExists(createHouseholdDto.icNo, masjidId);
+      if (existing) {
+        throw new ConflictException('No. K/P sudah wujud dalam sistem');
+      }
+    }
+
+    // Create household with first version
+    const household = await this.prisma.household.create({
+      data: {
+        masjidId,
+        versions: {
+          create: {
+            versionNo: 1,
+            createdByUserId: userId,
+            applicantName: createHouseholdDto.applicantName,
+            icNo: createHouseholdDto.icNo,
+            phone: createHouseholdDto.phone,
+            address: createHouseholdDto.address,
+            netIncome: createHouseholdDto.netIncome,
+            housingStatus: createHouseholdDto.housingStatus,
+            assistanceReceived: createHouseholdDto.assistanceReceived,
+            assistanceProviderText: createHouseholdDto.assistanceProviderText,
+            disabilityInFamily: createHouseholdDto.disabilityInFamily,
+            disabilityNotesText: createHouseholdDto.disabilityNotesText,
+            dependents: {
+              create: await Promise.all(
+                createHouseholdDto.dependents.map(async (dep) => {
+                  const person = await this.prisma.person.create({
+                    data: {
+                      fullName: dep.fullName,
+                      icNo: dep.icNo,
+                      phone: dep.phone,
+                    },
+                  });
+                  return {
+                    personId: person.id,
+                    relationship: dep.relationship,
+                    occupation: dep.occupation,
+                  };
+                }),
+              ),
+            },
+            disabilityMembers: {
+              create: await Promise.all(
+                createHouseholdDto.disabilityMembers.map(async (member) => {
+                  const person = await this.prisma.person.create({
+                    data: {
+                      fullName: member.fullName,
+                      icNo: member.icNo,
+                    },
+                  });
+                  return {
+                    personId: person.id,
+                    disabilityTypeId: member.disabilityTypeId,
+                    notesText: member.notesText,
+                  };
+                }),
+              ),
+            },
+            emergencyContacts: {
+              create: createHouseholdDto.emergencyContacts,
+            },
+          },
+        },
+      },
+      include: {
+        versions: {
+          include: {
+            dependents: { include: { person: true } },
+            disabilityMembers: { include: { person: true, disabilityType: true } },
+            emergencyContacts: true,
+            createdByUser: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+    });
+
+    // Set current version
+    await this.prisma.household.update({
+      where: { id: household.id },
+      data: { currentVersionId: household.versions[0].id },
+    });
+
+    return this.findOne(household.id);
+  }
+
+  async findAll(masjidId: string, query: any = {}) {
+    const {
+      search,
+      housingStatus,
+      incomeMin,
+      incomeMax,
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
+
+    const where: any = { masjidId };
+
+    if (search) {
+      where.currentVersion = {
+        OR: [
+          { applicantName: { contains: search, mode: 'insensitive' } },
+          { icNo: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    if (housingStatus) {
+      where.currentVersion = {
+        ...where.currentVersion,
+        housingStatus,
+      };
+    }
+
+    if (incomeMin !== undefined || incomeMax !== undefined) {
+      where.currentVersion = {
+        ...where.currentVersion,
+        netIncome: {
+          ...(incomeMin !== undefined && { gte: incomeMin }),
+          ...(incomeMax !== undefined && { lte: incomeMax }),
+        },
+      };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.household.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: {
+          currentVersion: {
+            include: {
+              dependents: { include: { person: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.household.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findOne(id: string) {
+    const household = await this.prisma.household.findUnique({
+      where: { id },
+      include: {
+        currentVersion: {
+          include: {
+            dependents: { include: { person: true } },
+            disabilityMembers: { include: { person: true, disabilityType: true } },
+            emergencyContacts: true,
+            createdByUser: { select: { id: true, name: true, email: true } },
+          },
+        },
+        versions: {
+          orderBy: { versionNo: 'desc' },
+          include: {
+            createdByUser: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+    });
+
+    if (!household) {
+      throw new NotFoundException('Isi rumah tidak dijumpai');
+    }
+
+    return household;
+  }
+
+  async update(id: string, updateHouseholdDto: UpdateHouseholdDto, userId: string) {
+    const household = await this.findOne(id);
+
+    // Check for duplicate IC if changed
+    if (updateHouseholdDto.icNo && updateHouseholdDto.icNo !== household.currentVersion?.icNo) {
+      const existing = await this.checkIcExists(updateHouseholdDto.icNo, household.masjidId, id);
+      if (existing) {
+        throw new ConflictException('No. K/P sudah wujud dalam sistem');
+      }
+    }
+
+    const latestVersion = household.versions[0];
+    const newVersionNo = latestVersion.versionNo + 1;
+
+    // Create new version
+    const newVersion = await this.prisma.householdVersion.create({
+      data: {
+        householdId: id,
+        versionNo: newVersionNo,
+        createdByUserId: userId,
+        applicantName: updateHouseholdDto.applicantName,
+        icNo: updateHouseholdDto.icNo,
+        phone: updateHouseholdDto.phone,
+        address: updateHouseholdDto.address,
+        netIncome: updateHouseholdDto.netIncome,
+        housingStatus: updateHouseholdDto.housingStatus,
+        assistanceReceived: updateHouseholdDto.assistanceReceived,
+        assistanceProviderText: updateHouseholdDto.assistanceProviderText,
+        disabilityInFamily: updateHouseholdDto.disabilityInFamily,
+        disabilityNotesText: updateHouseholdDto.disabilityNotesText,
+        dependents: {
+          create: await Promise.all(
+            updateHouseholdDto.dependents.map(async (dep) => {
+              const person = await this.prisma.person.create({
+                data: {
+                  fullName: dep.fullName,
+                  icNo: dep.icNo,
+                  phone: dep.phone,
+                },
+              });
+              return {
+                personId: person.id,
+                relationship: dep.relationship,
+                occupation: dep.occupation,
+              };
+            }),
+          ),
+        },
+        disabilityMembers: {
+          create: await Promise.all(
+            updateHouseholdDto.disabilityMembers.map(async (member) => {
+              const person = await this.prisma.person.create({
+                data: {
+                  fullName: member.fullName,
+                  icNo: member.icNo,
+                },
+              });
+              return {
+                personId: person.id,
+                disabilityTypeId: member.disabilityTypeId,
+                notesText: member.notesText,
+              };
+            }),
+          ),
+        },
+        emergencyContacts: {
+          create: updateHouseholdDto.emergencyContacts,
+        },
+      },
+    });
+
+    // Update current version pointer
+    await this.prisma.household.update({
+      where: { id },
+      data: { currentVersionId: newVersion.id },
+    });
+
+    return this.findOne(id);
+  }
+
+  async checkIcExists(icNo: string, masjidId: string, excludeHouseholdId?: string) {
+    const household = await this.prisma.household.findFirst({
+      where: {
+        masjidId,
+        currentVersion: {
+          icNo,
+        },
+        ...(excludeHouseholdId && { id: { not: excludeHouseholdId } }),
+      },
+    });
+
+    if (household) {
+      return { exists: true, householdId: household.id };
+    }
+
+    return null;
+  }
+
+  async getVersionHistory(id: string) {
+    const household = await this.prisma.household.findUnique({
+      where: { id },
+      include: {
+        versions: {
+          orderBy: { versionNo: 'desc' },
+          include: {
+            dependents: { include: { person: true } },
+            disabilityMembers: { include: { person: true, disabilityType: true } },
+            emergencyContacts: true,
+            createdByUser: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+    });
+
+    if (!household) {
+      throw new NotFoundException('Isi rumah tidak dijumpai');
+    }
+
+    return household.versions;
+  }
+
+  async getDisabilityTypes() {
+    return this.prisma.disabilityType.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }
+}

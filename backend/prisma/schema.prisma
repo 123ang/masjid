@@ -1,0 +1,222 @@
+// Masjid Kariah Census System - Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  ADMIN
+  IMAM
+  PENGURUSAN
+}
+
+enum HousingStatus {
+  SENDIRI  // Own
+  SEWA     // Rent
+}
+
+// ============================================
+// MASJID (Tenant - Multi-masjid support)
+// ============================================
+
+model Masjid {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users      User[]
+  households Household[]
+
+  @@map("masjid")
+}
+
+// ============================================
+// USER (Staff accounts)
+// ============================================
+
+model User {
+  id           String   @id @default(cuid())
+  masjidId     String   @map("masjid_id")
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(PENGURUSAN)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  masjid            Masjid             @relation(fields: [masjidId], references: [id])
+  householdVersions HouseholdVersion[] @relation("CreatedByUser")
+  submissions       Submission[]       @relation("ReceivedByUser")
+
+  @@map("user")
+}
+
+// ============================================
+// HOUSEHOLD (Stable identity)
+// ============================================
+
+model Household {
+  id               String   @id @default(cuid())
+  masjidId         String   @map("masjid_id")
+  currentVersionId String?  @unique @map("current_version_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  masjid         Masjid            @relation(fields: [masjidId], references: [id])
+  currentVersion HouseholdVersion? @relation("CurrentVersion", fields: [currentVersionId], references: [id])
+  versions       HouseholdVersion[] @relation("HouseholdVersions")
+  submissions    Submission[]
+
+  @@map("household")
+}
+
+// ============================================
+// HOUSEHOLD VERSION (Snapshot history)
+// ============================================
+
+model HouseholdVersion {
+  id              String   @id @default(cuid())
+  householdId     String   @map("household_id")
+  versionNo       Int      @map("version_no")
+  createdByUserId String   @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Section A: Applicant Info
+  applicantName   String?  @map("applicant_name")
+  icNo            String?  @map("ic_no")
+  phone           String?
+  address         String?
+  netIncome       Decimal? @map("net_income") @db.Decimal(10, 2)
+  housingStatus   HousingStatus? @map("housing_status")
+
+  // Section C: Monthly Assistance
+  assistanceReceived    Boolean @default(false) @map("assistance_received")
+  assistanceProviderText String? @map("assistance_provider_text")
+
+  // Section D: Disability (flag only, details in related table)
+  disabilityInFamily    Boolean @default(false) @map("disability_in_family")
+  disabilityNotesText   String? @map("disability_notes_text")
+
+  // Relations
+  household          Household  @relation("HouseholdVersions", fields: [householdId], references: [id])
+  currentOfHousehold Household? @relation("CurrentVersion")
+  createdByUser      User       @relation("CreatedByUser", fields: [createdByUserId], references: [id])
+  dependents         HouseholdVersionDependent[]
+  disabilityMembers  HouseholdVersionDisabilityMember[]
+  emergencyContacts  HouseholdVersionEmergencyContact[]
+
+  @@unique([householdId, versionNo])
+  @@map("household_version")
+}
+
+// ============================================
+// PERSON (Reusable for dependents)
+// ============================================
+
+model Person {
+  id        String   @id @default(cuid())
+  fullName  String   @map("full_name")
+  icNo      String?  @map("ic_no")
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  dependentOf       HouseholdVersionDependent[]
+  disabilityRecords HouseholdVersionDisabilityMember[]
+
+  @@map("person")
+}
+
+// ============================================
+// HOUSEHOLD VERSION DEPENDENT
+// ============================================
+
+model HouseholdVersionDependent {
+  id                 String @id @default(cuid())
+  householdVersionId String @map("household_version_id")
+  personId           String @map("person_id")
+  relationship       String? // Hubungan: Isteri, Anak, Ibu, Bapa, etc.
+  occupation         String? // Pekerjaan
+
+  householdVersion HouseholdVersion @relation(fields: [householdVersionId], references: [id], onDelete: Cascade)
+  person           Person           @relation(fields: [personId], references: [id])
+
+  @@map("household_version_dependent")
+}
+
+// ============================================
+// DISABILITY TYPE (Predefined list)
+// ============================================
+
+model DisabilityType {
+  id   String @id @default(cuid())
+  name String @unique
+
+  members HouseholdVersionDisabilityMember[]
+
+  @@map("disability_type")
+}
+
+// ============================================
+// HOUSEHOLD VERSION DISABILITY MEMBER
+// ============================================
+
+model HouseholdVersionDisabilityMember {
+  id                 String  @id @default(cuid())
+  householdVersionId String  @map("household_version_id")
+  personId           String  @map("person_id")
+  disabilityTypeId   String? @map("disability_type_id")
+  notesText          String? @map("notes_text")
+
+  householdVersion HouseholdVersion @relation(fields: [householdVersionId], references: [id], onDelete: Cascade)
+  person           Person           @relation(fields: [personId], references: [id])
+  disabilityType   DisabilityType?  @relation(fields: [disabilityTypeId], references: [id])
+
+  @@map("household_version_disability_member")
+}
+
+// ============================================
+// HOUSEHOLD VERSION EMERGENCY CONTACT
+// ============================================
+
+model HouseholdVersionEmergencyContact {
+  id                 String @id @default(cuid())
+  householdVersionId String @map("household_version_id")
+  name               String
+  icNo               String? @map("ic_no")
+  phone              String?
+  relationship       String?
+
+  householdVersion HouseholdVersion @relation(fields: [householdVersionId], references: [id], onDelete: Cascade)
+
+  @@map("household_version_emergency_contact")
+}
+
+// ============================================
+// SUBMISSION (Paper form tracking)
+// ============================================
+
+model Submission {
+  id               String   @id @default(cuid())
+  householdId      String   @map("household_id")
+  receivedDate     DateTime @map("received_date")
+  receivedByUserId String   @map("received_by_user_id")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  household    Household @relation(fields: [householdId], references: [id])
+  receivedByUser User     @relation("ReceivedByUser", fields: [receivedByUserId], references: [id])
+
+  @@map("submission")
+}

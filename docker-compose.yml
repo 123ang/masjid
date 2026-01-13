@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: mkcs-postgres
+    environment:
+      POSTGRES_USER: mkcs
+      POSTGRES_PASSWORD: mkcs_password
+      POSTGRES_DB: mkcs_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mkcs-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mkcs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: mkcs-backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://mkcs:mkcs_password@postgres:5432/mkcs_db
+      JWT_SECRET: your-super-secret-key-change-in-production
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mkcs-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+  frontend:
+    build: ./frontend
+    container_name: mkcs-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    depends_on:
+      - backend
+    networks:
+      - mkcs-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  mkcs-network:
+    driver: bridge
