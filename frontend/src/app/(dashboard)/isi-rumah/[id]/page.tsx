@@ -73,15 +73,15 @@ export default function HouseholdDetailPage() {
             id: household.id,
             ...currentVersion,
             dependents: currentVersion?.dependents?.map(d => ({
-              fullName: d.person.fullName,
-              icNo: d.person.icNo,
-              phone: d.person.phone,
+              fullName: d.person?.fullName || d.fullName || '',
+              icNo: d.person?.icNo || d.icNo,
+              phone: d.person?.phone || d.phone,
               relationship: d.relationship,
               occupation: d.occupation,
             })) || [],
             disabilityMembers: currentVersion?.disabilityMembers?.map(m => ({
-              fullName: m.person.fullName,
-              icNo: m.person.icNo,
+              fullName: m.person?.fullName || m.fullName || '',
+              icNo: m.person?.icNo || m.icNo,
               disabilityTypeId: m.disabilityTypeId,
               notesText: m.notesText,
             })) || [],
@@ -194,8 +194,8 @@ export default function HouseholdDetailPage() {
                   <TableBody>
                     {currentVersion?.dependents?.map((dep, index) => (
                       <TableRow key={index}>
-                        <TableCell>{dep.person.fullName}</TableCell>
-                        <TableCell className="font-mono text-sm">{dep.person.icNo || '-'}</TableCell>
+                        <TableCell>{dep.person?.fullName || dep.fullName || '-'}</TableCell>
+                        <TableCell className="font-mono text-sm">{dep.person?.icNo || dep.icNo || '-'}</TableCell>
                         <TableCell>{dep.relationship || '-'}</TableCell>
                         <TableCell>{dep.occupation || '-'}</TableCell>
                       </TableRow>
@@ -264,7 +264,7 @@ export default function HouseholdDetailPage() {
                         <TableBody>
                           {currentVersion?.disabilityMembers?.map((member, index) => (
                             <TableRow key={index}>
-                              <TableCell>{member.person.fullName}</TableCell>
+                              <TableCell>{member.person?.fullName || member.fullName || '-'}</TableCell>
                               <TableCell>{member.disabilityType?.name || '-'}</TableCell>
                               <TableCell>{member.notesText || '-'}</TableCell>
                             </TableRow>

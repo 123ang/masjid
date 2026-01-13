@@ -108,42 +108,48 @@ export class HouseholdService {
       sortOrder = 'desc',
     } = query;
 
+    // Convert page and limit to numbers
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
+    const incomeMinNum = incomeMin !== undefined ? parseFloat(incomeMin) : undefined;
+    const incomeMaxNum = incomeMax !== undefined ? parseFloat(incomeMax) : undefined;
+
     const where: any = { masjidId };
+    const currentVersionWhere: any = {};
 
     if (search) {
-      where.currentVersion = {
-        OR: [
-          { applicantName: { contains: search, mode: 'insensitive' } },
-          { icNo: { contains: search, mode: 'insensitive' } },
-          { address: { contains: search, mode: 'insensitive' } },
-        ],
-      };
+      currentVersionWhere.OR = [
+        { applicantName: { contains: search, mode: 'insensitive' } },
+        { icNo: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (housingStatus) {
-      where.currentVersion = {
-        ...where.currentVersion,
-        housingStatus,
-      };
+      currentVersionWhere.housingStatus = housingStatus;
     }
 
-    if (incomeMin !== undefined || incomeMax !== undefined) {
-      where.currentVersion = {
-        ...where.currentVersion,
-        netIncome: {
-          ...(incomeMin !== undefined && { gte: incomeMin }),
-          ...(incomeMax !== undefined && { lte: incomeMax }),
-        },
-      };
+    if (incomeMinNum !== undefined || incomeMaxNum !== undefined) {
+      currentVersionWhere.netIncome = {};
+      if (incomeMinNum !== undefined) {
+        currentVersionWhere.netIncome.gte = incomeMinNum;
+      }
+      if (incomeMaxNum !== undefined) {
+        currentVersionWhere.netIncome.lte = incomeMaxNum;
+      }
     }
 
-    const skip = (page - 1) * limit;
+    if (Object.keys(currentVersionWhere).length > 0) {
+      where.currentVersion = currentVersionWhere;
+    }
+
+    const skip = (pageNum - 1) * limitNum;
 
     const [data, total] = await Promise.all([
       this.prisma.household.findMany({
         where,
         skip,
-        take: limit,
+        take: limitNum,
         orderBy: { [sortBy]: sortOrder },
         include: {
           currentVersion: {
@@ -159,8 +165,8 @@ export class HouseholdService {
     return {
       data,
       total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
     };
   }
 

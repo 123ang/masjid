@@ -49,21 +49,24 @@ export interface Person {
 export interface HouseholdVersionDependent {
   id?: string;
   personId?: string;
-  fullName: string;
+  fullName?: string;
   icNo?: string;
   phone?: string;
   relationship?: string;
   occupation?: string;
+  person?: Person; // Nested person object from API
 }
 
 export interface DisabilityMember {
   id?: string;
   personId?: string;
-  fullName: string;
+  fullName?: string;
   icNo?: string;
   disabilityTypeId?: string;
   disabilityTypeName?: string;
+  disabilityType?: { id: string; name: string };
   notesText?: string;
+  person?: Person; // Nested person object from API
 }
 
 export interface EmergencyContact {

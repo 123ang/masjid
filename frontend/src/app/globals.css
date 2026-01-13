@@ -106,7 +106,12 @@
   }
 }
 
+html,
 body {
-  background-color: hsl(var(--color-background));
+  background-color: #ffffff;
   color: hsl(var(--color-foreground));
+}
+
+body {
+  background-color: #ffffff;
 }
