@@ -13,6 +13,11 @@ interface DependentFieldsProps {
 }
 
 export default function DependentFields({ dependents, onChange }: DependentFieldsProps) {
+  // Filter out empty dependents for counting
+  const nonEmptyDependents = dependents.filter(
+    (dep) => dep.fullName?.trim() || dep.icNo?.trim() || dep.phone?.trim() || dep.relationship?.trim() || dep.occupation?.trim()
+  );
+
   const addDependent = () => {
     onChange([
       ...dependents,
@@ -35,7 +40,7 @@ export default function DependentFields({ dependents, onChange }: DependentField
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>B. Senarai Tanggungan</CardTitle>
         <span className="text-sm text-gray-600">
-          Jumlah Tanggungan: {dependents.length}
+          Jumlah Tanggungan: {nonEmptyDependents.length}
         </span>
       </CardHeader>
       <CardContent className="space-y-4">

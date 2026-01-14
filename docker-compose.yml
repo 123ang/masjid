@@ -24,13 +24,13 @@ services:
     build: ./backend
     container_name: mkcs-backend
     ports:
-      - "3001:3001"
+      - "4008:4008"
     environment:
       DATABASE_URL: postgresql://mkcs:mkcs_password@postgres:5432/mkcs_db
       JWT_SECRET: your-super-secret-key-change-in-production
       JWT_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
-      PORT: 3001
+      PORT: 4008
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,9 +45,9 @@ services:
     build: ./frontend
     container_name: mkcs-frontend
     ports:
-      - "3000:3000"
+      - "3008:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NEXT_PUBLIC_API_URL: http://localhost:4008/api
     depends_on:
       - backend
     networks:

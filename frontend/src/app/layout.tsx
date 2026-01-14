@@ -6,8 +6,13 @@ import { AuthProvider } from "@/context/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Masjid Kariah Census System",
+  title: "MASJID AL-HUDA PADANG MATSIRAT",
   description: "Sistem Bancian Anak Kariah Masjid Al-Huda Padang Matsirat",
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({

@@ -110,9 +110,26 @@ export default function HouseholdListPage() {
               >
                 Sebelumnya
               </Button>
-              <span className="text-sm text-gray-600">
-                Halaman {page} daripada {totalPages}
-              </span>
+              
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <Button
+                    key={pageNum}
+                    variant={page === pageNum ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPage(pageNum)}
+                    className={
+                      page === pageNum
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : ''
+                    }
+                  >
+                    {pageNum}
+                  </Button>
+                ))}
+              </div>
+
               <Button
                 variant="outline"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}

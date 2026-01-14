@@ -113,13 +113,10 @@ export default function HouseholdDetailPage() {
       {/* Main Info */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center">
-              <User className="mr-2 h-6 w-6 text-green-600" />
-              Maklumat Pemohon
-            </CardTitle>
-            <Badge variant="outline">Versi {currentVersion?.versionNo}</Badge>
-          </div>
+          <CardTitle className="flex items-center">
+            <User className="mr-2 h-6 w-6 text-green-600" />
+            Maklumat Pemohon
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,6 +268,13 @@ export default function HouseholdDetailPage() {
                           ))}
                         </TableBody>
                       </Table>
+                    )}
+                    
+                    {currentVersion?.disabilityNotesText && (
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2">Catatan Tambahan</p>
+                        <p className="font-medium whitespace-pre-wrap">{currentVersion.disabilityNotesText}</p>
+                      </div>
                     )}
                   </>
                 )}

@@ -64,9 +64,14 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
     setLoading(true);
 
     try {
+      // Filter out empty dependents (all fields empty)
+      const validDependents = dependents.filter(
+        (dep) => dep.fullName?.trim() || dep.icNo?.trim() || dep.phone?.trim() || dep.relationship?.trim() || dep.occupation?.trim()
+      );
+
       const payload = {
         ...data,
-        dependents,
+        dependents: validDependents,
         disabilityMembers: disabilityInFamily ? disabilityMembers : [],
         emergencyContacts,
       };
