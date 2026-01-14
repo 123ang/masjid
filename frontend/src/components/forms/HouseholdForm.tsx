@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Plus, Trash2, AlertCircle } from 'lucide-react';
-import { CreateHouseholdDto, HousingStatus } from '@/types';
+import { CreateHouseholdDto, HousingStatus, HouseholdVersionDependent } from '@/types';
 import api from '@/lib/api';
 import DependentFields from './DependentFields';
 import DisabilityFields from './DisabilityFields';
@@ -66,7 +66,7 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
     try {
       // Filter out empty dependents (all fields empty)
       const validDependents = dependents.filter(
-        (dep) => dep.fullName?.trim() || dep.icNo?.trim() || dep.phone?.trim() || dep.relationship?.trim() || dep.occupation?.trim()
+        (dep: HouseholdVersionDependent) => dep.fullName?.trim() || dep.icNo?.trim() || dep.phone?.trim() || dep.relationship?.trim() || dep.occupation?.trim()
       );
 
       const payload = {
