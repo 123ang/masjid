@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'mkcs-backend',
-      script: './dist/main.js',
+      script: './dist/src/main.js',
       cwd: './backend',
       instances: 1,
       exec_mode: 'fork',
