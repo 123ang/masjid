@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'mkcs-backend',
-      script: './backend/dist/main.js',
+      script: './dist/main.js',
       cwd: './backend',
       instances: 1,
       exec_mode: 'fork',
@@ -10,8 +10,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 4008
       },
-      error_file: './backend/logs/err.log',
-      out_file: './backend/logs/out.log',
+      error_file: './logs/err.log',
+      out_file: './logs/out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       autorestart: true,
@@ -29,8 +29,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000
       },
-      error_file: './frontend/logs/err.log',
-      out_file: './frontend/logs/out.log',
+      error_file: './logs/err.log',
+      out_file: './logs/out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       autorestart: true,
