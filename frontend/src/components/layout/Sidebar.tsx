@@ -12,7 +12,7 @@ import {
   FileBarChart, 
   Settings,
   LogOut,
-  Mosque,
+  Building2,
   UserCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,7 +34,7 @@ export default function Sidebar() {
       <div className="p-6">
         <div className="flex items-center gap-3 mb-2">
           <div className="bg-white p-2 rounded-lg">
-            <Mosque className="w-8 h-8 text-green-800" />
+            <Building2 className="w-8 h-8 text-green-800" />
           </div>
           <div>
             <h1 className="font-bold text-lg">MKCS</h1>
