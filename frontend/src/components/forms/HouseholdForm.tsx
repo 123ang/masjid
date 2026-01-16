@@ -100,7 +100,15 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
       if (initialData?.id) {
         // Update - creates a new version
         // Remove version-specific fields from payload before sending
-        const { id, householdId, versionNo, createdByUserId, createdAt, updatedAt, ...updatePayload } = payload;
+        const updatePayload: any = { ...payload };
+        // Remove fields that shouldn't be sent to the API
+        delete updatePayload.id;
+        delete updatePayload.householdId;
+        delete updatePayload.versionNo;
+        delete updatePayload.createdByUserId;
+        delete updatePayload.createdAt;
+        delete updatePayload.updatedAt;
+        
         console.log('Updating household ID:', initialData.id);
         console.log('Payload (cleaned):', updatePayload);
         try {
