@@ -33,14 +33,14 @@ export class HouseholdController {
     return this.householdService.getDisabilityTypes();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.householdService.findOne(id);
-  }
-
   @Get(':id/versions')
   getVersionHistory(@Param('id') id: string) {
     return this.householdService.getVersionHistory(id);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.householdService.findOne(id);
   }
 
   @Put(':id')

@@ -13,10 +13,11 @@ export default function HouseholdListPage() {
   const [households, setHouseholds] = useState<Household[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [housingStatus, setHousingStatus] = useState<string>('');
+  const [housingStatus, setHousingStatus] = useState<string>('ALL');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     fetchHouseholds();
@@ -24,17 +25,34 @@ export default function HouseholdListPage() {
 
   const fetchHouseholds = async () => {
     setLoading(true);
+    setError('');
     try {
       const params: any = { page, limit: 20 };
       if (search) params.search = search;
-      if (housingStatus) params.housingStatus = housingStatus;
+      // Only send housingStatus if it's not "ALL" or empty
+      if (housingStatus && housingStatus !== 'ALL') {
+        params.housingStatus = housingStatus;
+      }
 
       const response = await api.get('/household', { params });
-      setHouseholds(response.data.data);
-      setTotalPages(response.data.totalPages);
-      setTotal(response.data.total);
-    } catch (error) {
+      setHouseholds(response.data.data || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotal(response.data.total || 0);
+    } catch (error: any) {
       console.error('Error fetching households:', error);
+      // Show more detailed error information
+      if (error.response) {
+        const errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
+        setError(errorMessage);
+        console.error('Response error:', error.response.data);
+        console.error('Status:', error.response.status);
+      } else if (error.request) {
+        setError('Tidak dapat menghubungi server. Pastikan backend sedang berjalan.');
+        console.error('Request error:', error.request);
+      } else {
+        setError(error.message || 'Ralat berlaku semasa memuatkan data.');
+        console.error('Error:', error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -52,10 +70,10 @@ export default function HouseholdListPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Senarai Isi Rumah</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Senarai Isi Rumah</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">
           Jumlah: {total} rekod
         </p>
       </div>
@@ -91,6 +109,14 @@ export default function HouseholdListPage() {
         </Button>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-medium">Ralat:</p>
+          <p>{error}</p>
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -102,17 +128,19 @@ export default function HouseholdListPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-2">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
+                className="w-full sm:w-auto"
               >
                 Sebelumnya
               </Button>
               
-              {/* Page Numbers */}
-              <div className="flex items-center gap-1">
+              {/* Page Numbers - scrollable on mobile */}
+              <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto justify-center pb-2 sm:pb-0">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
                   <Button
                     key={pageNum}
@@ -121,8 +149,8 @@ export default function HouseholdListPage() {
                     onClick={() => setPage(pageNum)}
                     className={
                       page === pageNum
-                        ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : ''
+                        ? 'bg-green-600 hover:bg-green-700 text-white flex-shrink-0'
+                        : 'flex-shrink-0'
                     }
                   >
                     {pageNum}
@@ -132,8 +160,10 @@ export default function HouseholdListPage() {
 
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
+                className="w-full sm:w-auto"
               >
                 Seterusnya
               </Button>

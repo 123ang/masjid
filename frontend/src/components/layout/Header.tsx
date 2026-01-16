@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, LogOut, User, Settings } from 'lucide-react';
+import { Bell, LogOut, User, Settings, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -29,28 +29,28 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b">
-      <div className="flex items-center justify-between px-6 py-3">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
         {/* Logo and Title */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Image
             src="/logo.png"
             alt="Logo"
-            width={40}
-            height={40}
-            className="object-contain"
+            width={32}
+            height={32}
+            className="object-contain flex-shrink-0 sm:w-10 sm:h-10"
           />
-          <div>
-            <h1 className="text-lg font-bold text-green-800">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm sm:text-lg font-bold text-green-800 truncate">
               MASJID AL-HUDA PADANG MATSIRAT
             </h1>
-            <p className="text-xs text-gray-600">Sistem Bancian Anak Kariah</p>
+            <p className="text-xs text-gray-600 hidden sm:block">Sistem Bancian Anak Kariah</p>
           </div>
         </div>
 
         {/* Right side - User menu */}
-        <div className="flex items-center gap-4">
-          {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          {/* Notifications - hidden on mobile */}
+          <Button variant="ghost" size="icon" className="relative hidden sm:flex">
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
           </Button>
@@ -79,12 +79,20 @@ export default function Header() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {user?.role === 'ADMIN' && (
-                <DropdownMenuItem asChild>
-                  <Link href="/pengguna" className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Pengurusan Pengguna
-                  </Link>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/pengguna" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Pengurusan Pengguna
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/kampung" className="cursor-pointer">
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Pengurusan Kampung
+                    </Link>
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer">

@@ -13,7 +13,8 @@ import {
   Settings,
   LogOut,
   Building2,
-  UserCircle
+  UserCircle,
+  MapPin
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -81,6 +82,18 @@ export default function Sidebar() {
               >
                 <Settings className="mr-3 h-5 w-5" />
                 Pengurusan Pengguna
+              </Button>
+            </Link>
+            <Link href="/kampung">
+              <Button
+                variant="ghost"
+                className={cn(
+                  'w-full justify-start text-white hover:bg-green-700 hover:text-white',
+                  pathname === '/kampung' && 'bg-green-700'
+                )}
+              >
+                <MapPin className="mr-3 h-5 w-5" />
+                Pengurusan Kampung
               </Button>
             </Link>
           </>

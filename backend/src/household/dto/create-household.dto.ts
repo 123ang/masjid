@@ -75,6 +75,10 @@ export class CreateHouseholdDto {
   address?: string;
 
   @IsOptional()
+  @IsString()
+  village?: string;
+
+  @IsOptional()
   @IsNumber()
   netIncome?: number;
 

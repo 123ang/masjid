@@ -78,8 +78,20 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
 
       let response;
       if (initialData?.id) {
-        // Update
-        response = await api.put(`/household/${initialData.id}`, payload);
+        // Update - creates a new version
+        // Remove version-specific fields from payload before sending
+        const { id, householdId, versionNo, createdByUserId, createdAt, updatedAt, ...updatePayload } = payload;
+        console.log('Updating household ID:', initialData.id);
+        console.log('Payload (cleaned):', updatePayload);
+        try {
+          response = await api.put(`/household/${initialData.id}`, updatePayload);
+        } catch (putError: any) {
+          console.error('PUT request failed:', putError);
+          console.error('URL:', `/household/${initialData.id}`);
+          console.error('Status:', putError.response?.status);
+          console.error('Data:', putError.response?.data);
+          throw putError;
+        }
       } else {
         // Create
         response = await api.post('/household', payload);
@@ -89,7 +101,12 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
         onSuccess(response.data);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Ralat berlaku. Sila cuba lagi.');
+      console.error('Error saving household:', err);
+      if (err.response) {
+        console.error('Response status:', err.response.status);
+        console.error('Response data:', err.response.data);
+      }
+      setError(err.response?.data?.message || err.message || 'Ralat berlaku. Sila cuba lagi.');
     } finally {
       setLoading(false);
     }
@@ -163,6 +180,30 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
               placeholder="Alamat lengkap"
               rows={3}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="village">Nama Kampung</Label>
+            <Select
+              onValueChange={(value) => setValue('village', value)}
+              defaultValue={initialData?.village}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih kampung" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Kg Raja">Kg Raja</SelectItem>
+                <SelectItem value="Kg Atas">Kg Atas</SelectItem>
+                <SelectItem value="Kg Atas Selatan">Kg Atas Selatan</SelectItem>
+                <SelectItem value="Kg Bawah">Kg Bawah</SelectItem>
+                <SelectItem value="Kg Darat">Kg Darat</SelectItem>
+                <SelectItem value="Kg Padang Matsirat">Kg Padang Matsirat</SelectItem>
+                <SelectItem value="Kg Kuala Muda">Kg Kuala Muda</SelectItem>
+                <SelectItem value="Kg Paya">Kg Paya</SelectItem>
+                <SelectItem value="Kg Limbong Putra">Kg Limbong Putra</SelectItem>
+                <SelectItem value="Kg Bukit Nau">Kg Bukit Nau</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

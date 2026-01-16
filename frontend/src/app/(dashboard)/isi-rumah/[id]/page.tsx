@@ -70,8 +70,8 @@ export default function HouseholdDetailPage() {
         <h1 className="text-3xl font-bold mb-6">Kemaskini Isi Rumah</h1>
         <HouseholdForm
           initialData={{
-            id: household.id,
             ...currentVersion,
+            id: household.id, // Ensure household ID is used, not version ID
             dependents: currentVersion?.dependents?.map(d => ({
               fullName: d.person?.fullName || d.fullName || '',
               icNo: d.person?.icNo || d.icNo,
@@ -155,6 +155,13 @@ export default function HouseholdDetailPage() {
             <p className="text-sm text-gray-600">Alamat Semasa</p>
             <p className="font-medium">{currentVersion?.address || '-'}</p>
           </div>
+
+          {currentVersion?.village && (
+            <div>
+              <p className="text-sm text-gray-600">Nama Kampung</p>
+              <p className="font-medium">{currentVersion.village}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

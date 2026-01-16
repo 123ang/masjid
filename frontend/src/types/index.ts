@@ -87,6 +87,7 @@ export interface HouseholdVersion {
   icNo?: string;
   phone?: string;
   address?: string;
+  village?: string;
   netIncome?: number;
   housingStatus?: HousingStatus;
   assistanceReceived: boolean;
@@ -114,6 +115,7 @@ export interface CreateHouseholdDto {
   icNo?: string;
   phone?: string;
   address?: string;
+  village?: string;
   netIncome?: number;
   housingStatus?: HousingStatus;
   assistanceReceived: boolean;

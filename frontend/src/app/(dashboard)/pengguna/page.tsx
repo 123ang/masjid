@@ -22,6 +22,8 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -59,13 +61,54 @@ export default function UserManagementPage() {
     setSuccess('');
 
     try {
-      await api.post('/user', formData);
-      setSuccess('Pengguna berjaya ditambah');
+      if (isEditMode && editingId) {
+        // Update - password is optional
+        const updateData: any = {
+          name: formData.name,
+          email: formData.email,
+          role: formData.role,
+        };
+        // Only include password if it's provided
+        if (formData.password && formData.password.trim() !== '') {
+          updateData.password = formData.password;
+        }
+        await api.put(`/user/${editingId}`, updateData);
+        setSuccess('Pengguna berjaya dikemaskini');
+      } else {
+        // Create - password is required
+        await api.post('/user', formData);
+        setSuccess('Pengguna berjaya ditambah');
+      }
       setIsDialogOpen(false);
-      setFormData({ name: '', email: '', password: '', role: UserRole.PENGURUSAN });
+      resetForm();
       fetchUsers();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal menambah pengguna');
+      setError(err.response?.data?.message || (isEditMode ? 'Gagal mengemaskini pengguna' : 'Gagal menambah pengguna'));
+    }
+  };
+
+  const handleEdit = (user: User) => {
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: '', // Don't pre-fill password
+      role: user.role,
+    });
+    setEditingId(user.id);
+    setIsEditMode(true);
+    setIsDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setFormData({ name: '', email: '', password: '', role: UserRole.PENGURUSAN });
+    setIsEditMode(false);
+    setEditingId(null);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      resetForm();
     }
   };
 
@@ -101,27 +144,35 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Pengurusan Pengguna</h1>
-          <p className="text-gray-600 mt-1">Urus akaun pengguna sistem</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Pengurusan Pengguna</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Urus akaun pengguna sistem</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button 
+              className="bg-green-600 hover:bg-green-700" 
+              onClick={() => {
+                resetForm();
+                setIsEditMode(false);
+              }}
+            >
               <UserPlus className="mr-2 h-4 w-4" />
               Tambah Pengguna
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Tambah Pengguna Baru</DialogTitle>
-              <DialogDescription>
-                Isi maklumat pengguna baru untuk sistem
+              <DialogTitle className="text-xl">
+                {isEditMode ? 'Kemaskini Pengguna' : 'Tambah Pengguna Baru'}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500">
+                {isEditMode ? 'Kemaskini maklumat pengguna' : 'Isi maklumat pengguna baru untuk sistem'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nama Penuh</Label>
                 <Input
@@ -130,6 +181,7 @@ export default function UserManagementPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Nama pengguna"
                   required
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -141,18 +193,23 @@ export default function UserManagementPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@example.com"
                   required
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Kata Laluan</Label>
+                <Label htmlFor="password">
+                  Kata Laluan
+                  {isEditMode && <span className="text-xs text-gray-500 ml-1">(biarkan kosong untuk tidak menukar)</span>}
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Minimum 6 aksara"
-                  required
-                  minLength={6}
+                  placeholder={isEditMode ? "Kosongkan jika tidak mahu menukar" : "Minimum 6 aksara"}
+                  required={!isEditMode}
+                  minLength={isEditMode ? 0 : 6}
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -171,12 +228,20 @@ export default function UserManagementPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <DialogFooter className="gap-2 sm:gap-0 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => handleDialogClose(false)}
+                  className="w-full sm:w-auto"
+                >
                   Batal
                 </Button>
-                <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                  Tambah
+                <Button 
+                  type="submit" 
+                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                >
+                  {isEditMode ? 'Kemaskini' : 'Tambah'}
                 </Button>
               </DialogFooter>
             </form>
@@ -232,16 +297,26 @@ export default function UserManagementPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {u.id !== user?.id && (
+                    <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(u.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleEdit(u)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    )}
+                      {u.id !== user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(u.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

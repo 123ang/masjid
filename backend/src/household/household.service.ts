@@ -28,6 +28,7 @@ export class HouseholdService {
             icNo: createHouseholdDto.icNo,
             phone: createHouseholdDto.phone,
             address: createHouseholdDto.address,
+            village: createHouseholdDto.village,
             netIncome: createHouseholdDto.netIncome,
             housingStatus: createHouseholdDto.housingStatus,
             assistanceReceived: createHouseholdDto.assistanceReceived,
@@ -201,6 +202,10 @@ export class HouseholdService {
   async update(id: string, updateHouseholdDto: UpdateHouseholdDto, userId: string) {
     const household = await this.findOne(id);
 
+    if (!household) {
+      throw new NotFoundException('Isi rumah tidak dijumpai');
+    }
+
     // Check for duplicate IC if changed
     if (updateHouseholdDto.icNo && updateHouseholdDto.icNo !== household.currentVersion?.icNo) {
       const existing = await this.checkIcExists(updateHouseholdDto.icNo, household.masjidId, id);
@@ -209,7 +214,13 @@ export class HouseholdService {
       }
     }
 
-    const latestVersion = household.versions[0];
+    // Get the latest version number
+    const versions = household.versions || [];
+    if (versions.length === 0) {
+      throw new NotFoundException('Versi isi rumah tidak dijumpai');
+    }
+    
+    const latestVersion = versions[0];
     const newVersionNo = latestVersion.versionNo + 1;
 
     // Create new version
@@ -222,6 +233,7 @@ export class HouseholdService {
         icNo: updateHouseholdDto.icNo,
         phone: updateHouseholdDto.phone,
         address: updateHouseholdDto.address,
+        village: updateHouseholdDto.village,
         netIncome: updateHouseholdDto.netIncome,
         housingStatus: updateHouseholdDto.housingStatus,
         assistanceReceived: updateHouseholdDto.assistanceReceived,

@@ -15,12 +15,15 @@ export default function DashboardPage() {
   const [incomeData, setIncomeData] = useState<IncomeDistribution[]>([]);
   const [housingData, setHousingData] = useState({ own: 0, rent: 0 });
   const [recentSubmissions, setRecentSubmissions] = useState([]);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setError('');
+    setLoading(true);
     try {
       const [summaryRes, incomeRes, housingRes, recentRes] = await Promise.all([
         api.get('/analytics/summary'),
@@ -33,8 +36,17 @@ export default function DashboardPage() {
       setIncomeData(incomeRes.data);
       setHousingData(housingRes.data);
       setRecentSubmissions(recentRes.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
+      
+      // Provide helpful error messages
+      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        setError('Tidak dapat menghubungi server. Pastikan backend sedang berjalan di http://localhost:3001');
+      } else if (error.response) {
+        setError(`Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
+      } else {
+        setError(error.message || 'Ralat berlaku semasa memuatkan data.');
+      }
     } finally {
       setLoading(false);
     }
@@ -49,11 +61,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Papan Pemuka</h1>
-        <p className="text-gray-600 mt-1">Sistem Bancian Anak Kariah Masjid Al-Huda Padang Matsirat</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Papan Pemuka</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">Sistem Bancian Anak Kariah Masjid Al-Huda Padang Matsirat</p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-medium">Ralat memuatkan data:</p>
+          <p className="text-sm">{error}</p>
+          <p className="text-sm mt-2">
+            <strong>Penyelesaian:</strong> Pastikan backend sedang berjalan dengan menjalankan <code className="bg-red-100 px-1 rounded">npm run start:dev</code> di folder backend.
+          </p>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
