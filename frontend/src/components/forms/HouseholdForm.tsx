@@ -40,9 +40,29 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
   const [dependents, setDependents] = useState(initialData?.dependents || []);
   const [disabilityMembers, setDisabilityMembers] = useState(initialData?.disabilityMembers || []);
   const [emergencyContacts, setEmergencyContacts] = useState(initialData?.emergencyContacts || []);
+  const [kampungs, setKampungs] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingKampungs, setLoadingKampungs] = useState(true);
 
   const assistanceReceived = watch('assistanceReceived');
   const disabilityInFamily = watch('disabilityInFamily');
+
+  // Fetch kampung list on component mount
+  useEffect(() => {
+    const fetchKampungs = async () => {
+      try {
+        const response = await api.get('/kampung');
+        setKampungs(response.data || []);
+      } catch (err) {
+        console.error('Error fetching kampungs:', err);
+        // Fallback to empty array if API fails
+        setKampungs([]);
+      } finally {
+        setLoadingKampungs(false);
+      }
+    };
+
+    fetchKampungs();
+  }, []);
 
   const checkIcDuplicate = async (icNo: string) => {
     if (!icNo || icNo.length < 12) return;
@@ -187,23 +207,28 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
             <Select
               onValueChange={(value) => setValue('village', value)}
               defaultValue={initialData?.village}
+              disabled={loadingKampungs}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Pilih kampung" />
+                <SelectValue placeholder={loadingKampungs ? "Memuatkan..." : "Pilih kampung"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Kg Raja">Kg Raja</SelectItem>
-                <SelectItem value="Kg Atas">Kg Atas</SelectItem>
-                <SelectItem value="Kg Atas Selatan">Kg Atas Selatan</SelectItem>
-                <SelectItem value="Kg Bawah">Kg Bawah</SelectItem>
-                <SelectItem value="Kg Darat">Kg Darat</SelectItem>
-                <SelectItem value="Kg Padang Matsirat">Kg Padang Matsirat</SelectItem>
-                <SelectItem value="Kg Kuala Muda">Kg Kuala Muda</SelectItem>
-                <SelectItem value="Kg Paya">Kg Paya</SelectItem>
-                <SelectItem value="Kg Limbong Putra">Kg Limbong Putra</SelectItem>
-                <SelectItem value="Kg Bukit Nau">Kg Bukit Nau</SelectItem>
+                {kampungs.length > 0 ? (
+                  kampungs.map((kampung) => (
+                    <SelectItem key={kampung.id} value={kampung.name}>
+                      {kampung.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    Tiada kampung dijumpai
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
+            {loadingKampungs && (
+              <p className="text-xs text-gray-500 mt-1">Memuatkan senarai kampung...</p>
+            )}
           </div>
 
           <div>

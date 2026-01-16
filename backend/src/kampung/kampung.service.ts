@@ -7,9 +7,12 @@ export class KampungService {
   constructor(private prisma: PrismaService) {}
 
   async create(createKampungDto: CreateKampungDto, masjidId: string) {
-    // Check if name already exists
-    const existing = await this.prisma.kampung.findUnique({
-      where: { name: createKampungDto.name },
+    // Check if name already exists for this masjid
+    const existing = await this.prisma.kampung.findFirst({
+      where: { 
+        name: createKampungDto.name,
+        masjidId,
+      },
     });
 
     if (existing) {
@@ -30,7 +33,10 @@ export class KampungService {
 
   async findAll(masjidId: string) {
     const kampungs = await this.prisma.kampung.findMany({
-      where: { masjidId },
+      where: { 
+        masjidId,
+        isActive: true, // Only return active kampungs for form dropdowns
+      },
       orderBy: { name: 'asc' },
     });
 
@@ -55,10 +61,13 @@ export class KampungService {
   async update(id: string, updateKampungDto: UpdateKampungDto, masjidId: string) {
     const kampung = await this.findOne(id, masjidId);
 
-    // Check if new name conflicts with existing
+    // Check if new name conflicts with existing for this masjid
     if (updateKampungDto.name && updateKampungDto.name !== kampung.name) {
-      const existing = await this.prisma.kampung.findUnique({
-        where: { name: updateKampungDto.name },
+      const existing = await this.prisma.kampung.findFirst({
+        where: { 
+          name: updateKampungDto.name,
+          masjidId,
+        },
       });
 
       if (existing) {

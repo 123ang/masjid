@@ -175,6 +175,42 @@ async function main() {
   }
   console.log('✅ Disability types created:', disabilityTypes.length);
 
+  // Create Kampung (Villages)
+  console.log('🏘️  Creating kampung...');
+  const kampungNames = [
+    'Kg Raja',
+    'Kg Atas',
+    'Kg Atas Selatan',
+    'Kg Bawah',
+    'Kg Darat',
+    'Kg Padang Matsirat',
+    'Kg Kuala Muda',
+    'Kg Paya',
+    'Kg Limbong Putra',
+    'Kg Bukit Nau',
+  ];
+
+  for (const kampungName of kampungNames) {
+    // Check if kampung already exists for this masjid
+    const existing = await prisma.kampung.findFirst({
+      where: {
+        name: kampungName,
+        masjidId: masjid.id,
+      },
+    });
+
+    if (!existing) {
+      await prisma.kampung.create({
+        data: {
+          name: kampungName,
+          masjidId: masjid.id,
+          isActive: true,
+        },
+      });
+    }
+  }
+  console.log('✅ Kampung created:', kampungNames.length);
+
   // Create Sample Households
   console.log('🏠 Creating sample households...');
 
