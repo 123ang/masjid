@@ -207,10 +207,16 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
             <Select
               onValueChange={(value) => setValue('village', value)}
               defaultValue={initialData?.village}
-              disabled={loadingKampungs}
+              disabled={loadingKampungs || kampungs.length === 0}
             >
               <SelectTrigger>
-                <SelectValue placeholder={loadingKampungs ? "Memuatkan..." : "Pilih kampung"} />
+                <SelectValue placeholder={
+                  loadingKampungs 
+                    ? "Memuatkan..." 
+                    : kampungs.length === 0 
+                    ? "Tiada kampung dijumpai" 
+                    : "Pilih kampung"
+                } />
               </SelectTrigger>
               <SelectContent>
                 {kampungs.length > 0 ? (
@@ -220,14 +226,19 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <div className="px-2 py-1.5 text-sm text-gray-500">
                     Tiada kampung dijumpai
-                  </SelectItem>
+                  </div>
                 )}
               </SelectContent>
             </Select>
             {loadingKampungs && (
               <p className="text-xs text-gray-500 mt-1">Memuatkan senarai kampung...</p>
+            )}
+            {!loadingKampungs && kampungs.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                Sila tambah kampung melalui menu "Pengurusan Kampung" terlebih dahulu.
+              </p>
             )}
           </div>
 
