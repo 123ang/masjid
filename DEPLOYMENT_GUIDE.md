@@ -82,7 +82,7 @@ DATABASE_URL=postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/mkcs_db
 JWT_SECRET=your-super-secret-key-change-in-production-min-32-chars
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
-PORT=3001
+PORT=4008
 ```
 
 **Important:** Replace `YOUR_POSTGRES_PASSWORD` with your actual PostgreSQL password.
@@ -118,11 +118,11 @@ Expected output:
 npm run start:dev
 ```
 
-Backend should start on `http://localhost:3001`
+Backend should start on `http://localhost:4008`
 
 You should see:
 ```
-🚀 Backend running on http://localhost:3001/api
+🚀 Backend running on http://localhost:4008/api
 ```
 
 ### Step 7: Setup Frontend
@@ -143,7 +143,7 @@ npm install
 Create/edit `frontend/.env.local`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
+NEXT_PUBLIC_API_URL=http://localhost:4008/api
 ```
 
 ### Step 8: Start Frontend
@@ -153,11 +153,11 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api
 npm run dev
 ```
 
-Frontend should start on `http://localhost:3000`
+Frontend should start on `http://localhost:3008`
 
 ### Step 9: Test the Application
 
-1. Open browser: `http://localhost:3000`
+1. Open browser: `http://localhost:3008`
 2. You should see the login page
 3. Login with:
    - **Email:** `admin@masjidalhuda.my`
@@ -244,12 +244,19 @@ sudo -u postgres psql
 
 # Create database and user
 CREATE DATABASE mkcs_db;
-
+CREATE USER mkcs_user WITH PASSWORD 'Masjid_5792';
 GRANT ALL PRIVILEGES ON DATABASE mkcs_db TO mkcs_user;
+
+# Connect to the database and grant schema permissions
+\c mkcs_db
+GRANT ALL ON SCHEMA public TO mkcs_user;
+GRANT CREATE ON SCHEMA public TO mkcs_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mkcs_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mkcs_user;
 \q
 ```
 
-**Important:** Replace `YOUR_SECURE_PASSWORD_HERE` with a strong password.
+**Important:** Replace `Masjid_5792` with a strong password.
 
 ### Step 5: Clone Project
 
@@ -283,10 +290,10 @@ Add to `backend/.env`:
 
 ```env
 DATABASE_URL=postgresql://mkcs_user:YOUR_SECURE_PASSWORD_HERE@localhost:5432/mkcs_db
-JWT_SECRET=your-super-secret-key-min-32-characters-change-this-in-production
+JWT_SECRET=f8834a089d5815be6cbe87d12b29603832c44379b6c71b7b0450ab691f19592493238aaacaaed8fb5ab4b9aa3212f2ce83d7845b22115a4e0f2c74981576f8e8
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
-PORT=3001
+PORT=4008
 NODE_ENV=production
 ```
 
@@ -326,11 +333,11 @@ cd /root/projects/masjid/frontend
 # Install dependencies
 npm install
 
-# Create production .env.local
-nano .env.local
+# Create production .env file
+nano .env
 ```
 
-Add to `frontend/.env.local`:
+Add to `frontend/.env`:
 
 ```env
 NEXT_PUBLIC_API_URL=https://masjid.taskinsight.my/api
@@ -345,11 +352,13 @@ Save and exit.
 npm run build
 ```
 
-### Step 11: Setup PM2 for Backend
+### Step 11: Setup PM2 for Backend and Frontend
 
 ```bash
-# Create PM2 ecosystem file
-cd /root/projects/masjid/backend
+# Navigate to project root
+cd /root/projects/masjid
+
+# Create PM2 ecosystem file (manages both backend and frontend)
 nano ecosystem.config.js
 ```
 
@@ -357,33 +366,56 @@ Add:
 
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'mkcs-backend',
-    script: 'dist/main.js',
-    instances: 1,
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3001
+  apps: [
+    {
+      name: 'mkcs-backend',
+      script: './dist/src/main.js',
+      cwd: './backend',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 4008
+      },
+      error_file: './logs/err.log',
+      out_file: './logs/out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G'
     },
-    error_file: './logs/err.log',
-    out_file: './logs/out.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-    merge_logs: true,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G'
-  }]
+    {
+      name: 'mkcs-frontend',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start',
+      cwd: './frontend',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3008
+      },
+      error_file: './logs/err.log',
+      out_file: './logs/out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G'
+    }
+  ]
 };
 ```
 
 Save and exit.
 
 ```bash
-# Create logs directory
-mkdir -p logs
+# Create logs directories
+mkdir -p backend/logs
+mkdir -p frontend/logs
 
-# Start backend with PM2
+# Start both backend and frontend with PM2
 pm2 start ecosystem.config.js
 
 # Save PM2 configuration
@@ -394,92 +426,23 @@ pm2 startup
 # Follow the instructions shown
 ```
 
-### Step 12: Setup PM2 for Frontend
+### Step 13: Configure Nginx (Initial HTTP-only Config)
 
 ```bash
-cd /root/projects/masjid/frontend
-
-# Create PM2 ecosystem file
-nano ecosystem.config.js
-```
-
-Add:
-
-```javascript
-module.exports = {
-  apps: [{
-    name: 'mkcs-frontend',
-    script: 'node_modules/next/dist/bin/next',
-    args: 'start',
-    instances: 1,
-    exec_mode: 'fork',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3000
-    },
-    error_file: './logs/err.log',
-    out_file: './logs/out.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-    merge_logs: true,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G'
-  }]
-};
-```
-
-Save and exit.
-
-```bash
-# Create logs directory
-mkdir -p logs
-
-# Start frontend with PM2
-pm2 start ecosystem.config.js
-
-# Save PM2 configuration
-pm2 save
-```
-
-### Step 13: Configure Nginx
-
-```bash
-# Create Nginx configuration
+# Create Nginx configuration (HTTP only, SSL will be added by Certbot)
 sudo nano /etc/nginx/sites-available/masjid.taskinsight.my
 ```
 
 Add:
 
 ```nginx
-# Redirect HTTP to HTTPS
 server {
     listen 80;
     server_name masjid.taskinsight.my;
-    return 301 https://$server_name$request_uri;
-}
-
-# HTTPS server
-server {
-    listen 443 ssl http2;
-    server_name masjid.taskinsight.my;
-
-    # SSL certificates (will be added by Certbot)
-    ssl_certificate /etc/letsencrypt/live/masjid.taskinsight.my/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/masjid.taskinsight.my/privkey.pem;
-
-    # SSL configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
-
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
 
     # Frontend
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3008;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -492,7 +455,7 @@ server {
 
     # Backend API
     location /api {
-        proxy_pass http://localhost:3001;
+        proxy_pass http://localhost:4008;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -530,6 +493,8 @@ sudo certbot --nginx -d masjid.taskinsight.my
 # - Enter your email
 # - Agree to terms
 # - Choose whether to redirect HTTP to HTTPS (recommended: Yes)
+
+# Certbot will automatically update your Nginx config to include SSL
 
 # Test auto-renewal
 sudo certbot renew --dry-run
@@ -665,11 +630,48 @@ top
 pm2 logs mkcs-backend
 
 # Check if port is in use
-netstat -tulpn | grep 3001
+netstat -tulpn | grep 4008
 
 # Restart backend
 pm2 restart mkcs-backend
 ```
+
+### PM2 Script Not Found Error
+
+If you see `Error: Script not found: /root/projects/masjid/backend/dist/main.js`:
+
+1. **Verify the build output exists:**
+   ```bash
+   ls -la /root/projects/masjid/backend/dist/main.js
+   ```
+
+2. **If the file doesn't exist, rebuild:**
+   ```bash
+   cd /root/projects/masjid/backend
+   npm run build
+   ls -la dist/
+   ```
+
+3. **Clean up PM2 processes and start fresh:**
+   ```bash
+   # Stop all processes
+   pm2 stop all
+   
+   # Delete all processes
+   pm2 delete all
+   
+   # Verify no processes are running
+   pm2 list
+   
+   # Start fresh
+   pm2 start ecosystem.config.js
+   ```
+
+4. **If still having issues, check build errors:**
+   ```bash
+   cd /root/projects/masjid/backend
+   npm run build 2>&1 | tee build.log
+   ```
 
 ### Frontend Not Loading
 
@@ -722,6 +724,70 @@ sudo certbot certificates
 
 ### Prisma Errors
 
+#### Permission Denied for Schema Public
+
+If you see `ERROR: permission denied for schema public`:
+
+```bash
+# Connect to PostgreSQL as postgres user
+sudo -u postgres psql
+
+# Connect to your database
+\c mkcs_db
+
+# Grant necessary permissions
+GRANT ALL ON SCHEMA public TO mkcs_user;
+GRANT CREATE ON SCHEMA public TO mkcs_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mkcs_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mkcs_user;
+
+# Exit
+\q
+```
+
+Then try running migrations again:
+```bash
+cd /root/projects/masjid/backend
+npx prisma migrate deploy
+```
+
+#### No Migrations Found / Tables Don't Exist
+
+If you see `No migration found in prisma/migrations` or `table does not exist`:
+
+**Option 1: Check if migrations directory exists (Recommended)**
+```bash
+cd /root/projects/masjid/backend
+ls -la prisma/migrations
+```
+
+If the migrations directory is empty or doesn't exist:
+- Make sure you've uploaded/copied all files from your local machine, including the `prisma/migrations` folder
+- If using Git, ensure migrations are committed and pushed to the repository
+
+**Option 2: Use db push (Quick fix for first-time setup only)**
+```bash
+cd /root/projects/masjid/backend
+npx prisma db push
+```
+
+This will create tables directly from the schema without migrations. **Note:** This is only for first-time setup. For production, you should use migrations.
+
+After `db push` succeeds, you can run:
+```bash
+npx prisma db seed
+```
+
+**Option 3: Create migrations from schema (Alternative)**
+```bash
+cd /root/projects/masjid/backend
+npx prisma migrate dev --name init
+```
+
+**⚠️ Warning:** `migrate dev` is typically for development. Use with caution in production.
+
+#### Other Prisma Errors
+
 ```bash
 cd /root/projects/masjid/backend
 
@@ -739,7 +805,7 @@ npx prisma migrate deploy
 
 ```bash
 # Find process using port
-sudo lsof -i :3001
+sudo lsof -i :4008
 sudo lsof -i :3000
 
 # Kill process
