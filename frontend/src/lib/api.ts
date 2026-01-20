@@ -1,6 +1,31 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Determine API URL based on environment
+// In production, use relative URL (works with both domains via Nginx)
+// In development, use environment variable or default localhost
+const getApiUrl = () => {
+  // If explicitly set via environment variable, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // In browser (client-side), use relative URL for production
+  if (typeof window !== 'undefined') {
+    // Check if we're in production (not localhost)
+    const isProduction = window.location.hostname !== 'localhost' && 
+                        window.location.hostname !== '127.0.0.1';
+    
+    if (isProduction) {
+      // Use relative URL - Nginx will proxy /api to backend
+      return '/api';
+    }
+  }
+  
+  // Default to localhost for development
+  return 'http://localhost:3001/api';
+};
+
+const API_URL = getApiUrl();
 
 export const api = axios.create({
   baseURL: API_URL,
