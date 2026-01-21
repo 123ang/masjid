@@ -11,9 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, MapPin } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -75,23 +74,6 @@ export default function Header() {
                   <p className="text-xs text-gray-500 break-all">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
-              {user?.role === 'ADMIN' && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/pengguna" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Pengguna
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/kampung" className="cursor-pointer">
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Kampung
-                    </Link>
-                  </DropdownMenuItem>
-                </>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
