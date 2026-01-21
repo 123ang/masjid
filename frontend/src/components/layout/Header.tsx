@@ -11,9 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, LogOut, User, Settings, MapPin } from 'lucide-react';
-import Link from 'next/link';
+import { LogOut, Settings, MapPin } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -29,7 +29,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b">
-      <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 gap-2">
         {/* Logo and Title */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Image
@@ -49,17 +49,11 @@ export default function Header() {
 
         {/* Right side - User menu */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          {/* Notifications - hidden on mobile */}
-          <Button variant="ghost" size="icon" className="relative hidden sm:flex">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
-          </Button>
-
           {/* User Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
+              <Button variant="ghost" className="flex items-center gap-2 px-2 sm:px-3">
+                <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
                   <AvatarFallback className="bg-green-600 text-white text-sm">
                     {user?.name ? getInitials(user.name) : 'U'}
                   </AvatarFallback>
@@ -70,26 +64,30 @@ export default function Header() {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent
+              align="end"
+              sideOffset={8}
+              className="w-64 max-w-[calc(100vw-1rem)] bg-white text-gray-900 border border-gray-200 shadow-lg"
+            >
               <DropdownMenuLabel>
                 <div>
                   <p className="font-medium">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-xs text-gray-500 break-all">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
               {user?.role === 'ADMIN' && (
                 <>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/pengguna" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
-                      Pengurusan Pengguna
+                      Pengguna
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/kampung" className="cursor-pointer">
                       <MapPin className="mr-2 h-4 w-4" />
-                      Pengurusan Kampung
+                      Kampung
                     </Link>
                   </DropdownMenuItem>
                 </>

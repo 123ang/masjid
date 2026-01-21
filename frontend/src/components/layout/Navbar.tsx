@@ -8,7 +8,7 @@ import {
   LayoutDashboard, 
   FileText, 
   Users, 
-  FileBarChart, 
+  FileBarChart,
   Settings,
   MapPin
 } from 'lucide-react';
