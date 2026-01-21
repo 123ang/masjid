@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateHouseholdDto } from './dto/create-household.dto';
 import { UpdateHouseholdDto } from './dto/update-household.dto';
@@ -7,10 +11,17 @@ import { UpdateHouseholdDto } from './dto/update-household.dto';
 export class HouseholdService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createHouseholdDto: CreateHouseholdDto, userId: string, masjidId: string) {
+  async create(
+    createHouseholdDto: CreateHouseholdDto,
+    userId: string,
+    masjidId: string,
+  ) {
     // Check for duplicate IC if provided
     if (createHouseholdDto.icNo) {
-      const existing = await this.checkIcExists(createHouseholdDto.icNo, masjidId);
+      const existing = await this.checkIcExists(
+        createHouseholdDto.icNo,
+        masjidId,
+      );
       if (existing) {
         throw new ConflictException('No. K/P sudah wujud dalam sistem');
       }
@@ -80,7 +91,9 @@ export class HouseholdService {
         versions: {
           include: {
             dependents: { include: { person: true } },
-            disabilityMembers: { include: { person: true, disabilityType: true } },
+            disabilityMembers: {
+              include: { person: true, disabilityType: true },
+            },
             emergencyContacts: true,
             createdByUser: { select: { id: true, name: true, email: true } },
           },
@@ -112,8 +125,10 @@ export class HouseholdService {
     // Convert page and limit to numbers
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 20;
-    const incomeMinNum = incomeMin !== undefined ? parseFloat(incomeMin) : undefined;
-    const incomeMaxNum = incomeMax !== undefined ? parseFloat(incomeMax) : undefined;
+    const incomeMinNum =
+      incomeMin !== undefined ? parseFloat(incomeMin) : undefined;
+    const incomeMaxNum =
+      incomeMax !== undefined ? parseFloat(incomeMax) : undefined;
 
     const where: any = { masjidId };
     const currentVersionWhere: any = {};
@@ -178,7 +193,9 @@ export class HouseholdService {
         currentVersion: {
           include: {
             dependents: { include: { person: true } },
-            disabilityMembers: { include: { person: true, disabilityType: true } },
+            disabilityMembers: {
+              include: { person: true, disabilityType: true },
+            },
             emergencyContacts: true,
             createdByUser: { select: { id: true, name: true, email: true } },
           },
@@ -199,7 +216,11 @@ export class HouseholdService {
     return household;
   }
 
-  async update(id: string, updateHouseholdDto: UpdateHouseholdDto, userId: string) {
+  async update(
+    id: string,
+    updateHouseholdDto: UpdateHouseholdDto,
+    userId: string,
+  ) {
     const household = await this.findOne(id);
 
     if (!household) {
@@ -207,8 +228,15 @@ export class HouseholdService {
     }
 
     // Check for duplicate IC if changed
-    if (updateHouseholdDto.icNo && updateHouseholdDto.icNo !== household.currentVersion?.icNo) {
-      const existing = await this.checkIcExists(updateHouseholdDto.icNo, household.masjidId, id);
+    if (
+      updateHouseholdDto.icNo &&
+      updateHouseholdDto.icNo !== household.currentVersion?.icNo
+    ) {
+      const existing = await this.checkIcExists(
+        updateHouseholdDto.icNo,
+        household.masjidId,
+        id,
+      );
       if (existing) {
         throw new ConflictException('No. K/P sudah wujud dalam sistem');
       }
@@ -219,7 +247,7 @@ export class HouseholdService {
     if (versions.length === 0) {
       throw new NotFoundException('Versi isi rumah tidak dijumpai');
     }
-    
+
     const latestVersion = versions[0];
     const newVersionNo = latestVersion.versionNo + 1;
 
@@ -290,7 +318,11 @@ export class HouseholdService {
     return this.findOne(id);
   }
 
-  async checkIcExists(icNo: string, masjidId: string, excludeHouseholdId?: string) {
+  async checkIcExists(
+    icNo: string,
+    masjidId: string,
+    excludeHouseholdId?: string,
+  ) {
     const household = await this.prisma.household.findFirst({
       where: {
         masjidId,
@@ -316,7 +348,9 @@ export class HouseholdService {
           orderBy: { versionNo: 'desc' },
           include: {
             dependents: { include: { person: true } },
-            disabilityMembers: { include: { person: true, disabilityType: true } },
+            disabilityMembers: {
+              include: { person: true, disabilityType: true },
+            },
             emergencyContacts: true,
             createdByUser: { select: { id: true, name: true, email: true } },
           },

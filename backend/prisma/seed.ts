@@ -235,10 +235,13 @@ async function main() {
     });
 
     // Create household version (initial)
-    const numDependents = Math.floor(Math.random() * 5); // 0-4 dependents
+    const numDependents = Math.floor(Math.random() * 7); // 0-6 dependents (so some have ≥4)
     const hasOKU = Math.random() > 0.85; // 15% chance of having OKU member
     const housingStatus = housingStatuses[Math.floor(Math.random() * housingStatuses.length)];
     const netIncome = Math.floor(Math.random() * 10000) + 1000; // 1000-11000
+
+    // Assign a random village from kampung list
+    const village = kampungNames[Math.floor(Math.random() * kampungNames.length)];
 
     const version = await prisma.householdVersion.create({
       data: {
@@ -249,6 +252,7 @@ async function main() {
         icNo: headIC,
         phone: generatePhone(),
         address: `${houseNumber}, ${street}, 07100 Langkawi, Kedah`,
+        village: village,
         netIncome: netIncome,
         housingStatus: housingStatus,
         assistanceReceived: Math.random() > 0.7,
@@ -345,10 +349,12 @@ async function main() {
   console.log('📊 Sample data created:');
   console.log('   - 50 households');
   console.log('   - Various income ranges (RM1000-RM11000)');
-  console.log('   - OKU members (15% of households)');
-  console.log('   - Dependents (0-4 per household)');
-  console.log('   - Emergency contacts (70% of households)');
+  console.log('   - OKU members (~15% of households)');
+  console.log('   - Assistance received (~30% of households)');
+  console.log('   - Dependents (0-6 per household, some with ≥4)');
+  console.log('   - Emergency contacts (~70% of households)');
   console.log('   - Housing status variety (Own/Rent)');
+  console.log('   - Villages assigned from kampung list');
   console.log('');
   console.log('⚠️  Change passwords in production!');
 }

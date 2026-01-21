@@ -10,7 +10,15 @@ import { UserModule } from './user/user.module';
 import { KampungModule } from './kampung/kampung.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, HouseholdModule, AnalyticsModule, ExportModule, UserModule, KampungModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    HouseholdModule,
+    AnalyticsModule,
+    ExportModule,
+    UserModule,
+    KampungModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

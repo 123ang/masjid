@@ -1,11 +1,56 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AnalyticsService {
   constructor(private prisma: PrismaService) {}
 
-  async getSummary(masjidId: string) {
+  private calcPercent(part: number, total: number) {
+    if (!total) return 0;
+    return parseFloat(((part / total) * 100).toFixed(1));
+  }
+
+  async resolveMasjidId(masjidId?: string) {
+    if (masjidId) return masjidId;
+    const masjid = await this.prisma.masjid.findFirst({
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!masjid) {
+      throw new NotFoundException('Masjid not configured');
+    }
+    return masjid.id;
+  }
+
+  async getKampungs(masjidId: string) {
+    const rows = await this.prisma.householdVersion.findMany({
+      where: {
+        household: { masjidId },
+        currentOfHousehold: { isNot: null },
+        village: { not: null },
+      },
+      distinct: ['village'],
+      select: { village: true },
+      orderBy: { village: 'asc' },
+    });
+    return rows.map((r) => r.village).filter((v): v is string => Boolean(v));
+  }
+
+  async getSummary(masjidId: string, kampung?: string) {
+    // Build currentVersion conditions properly to avoid overwriting
+    const baseCurrentVersionCondition = kampung ? { village: kampung } : {};
+
+    const currentVersionWhere = kampung
+      ? {
+          household: { masjidId },
+          currentOfHousehold: { isNot: null },
+          village: kampung,
+        }
+      : {
+          household: { masjidId },
+          currentOfHousehold: { isNot: null },
+        };
+
     const [
       totalHouseholds,
       totalDependentsResult,
@@ -13,20 +58,26 @@ export class AnalyticsService {
       rentHouseCount,
       assistanceCount,
       disabilityCount,
+      assistedThisYearCount,
+      manyDependentsGroups,
       avgIncomeResult,
       thisMonthCount,
       staleRecordsCount,
     ] = await Promise.all([
       // Total households
-      this.prisma.household.count({ where: { masjidId } }),
+      this.prisma.household.count({
+        where: {
+          masjidId,
+          ...(kampung ? { currentVersion: { village: kampung } } : {}),
+        },
+      }),
 
       // Total dependents
       this.prisma.householdVersionDependent.aggregate({
         _count: { id: true },
         where: {
           householdVersion: {
-            household: { masjidId },
-            currentOfHousehold: { isNot: null },
+            ...currentVersionWhere,
           },
         },
       }),
@@ -35,7 +86,7 @@ export class AnalyticsService {
       this.prisma.household.count({
         where: {
           masjidId,
-          currentVersion: { housingStatus: 'SENDIRI' },
+          currentVersion: { ...baseCurrentVersionCondition, housingStatus: 'SENDIRI' },
         },
       }),
 
@@ -43,7 +94,7 @@ export class AnalyticsService {
       this.prisma.household.count({
         where: {
           masjidId,
-          currentVersion: { housingStatus: 'SEWA' },
+          currentVersion: { ...baseCurrentVersionCondition, housingStatus: 'SEWA' },
         },
       }),
 
@@ -51,7 +102,7 @@ export class AnalyticsService {
       this.prisma.household.count({
         where: {
           masjidId,
-          currentVersion: { assistanceReceived: true },
+          currentVersion: { ...baseCurrentVersionCondition, assistanceReceived: true },
         },
       }),
 
@@ -59,7 +110,36 @@ export class AnalyticsService {
       this.prisma.household.count({
         where: {
           masjidId,
-          currentVersion: { disabilityInFamily: true },
+          currentVersion: { ...baseCurrentVersionCondition, disabilityInFamily: true },
+        },
+      }),
+
+      // Assisted households (current year)
+      this.prisma.household.count({
+        where: {
+          masjidId,
+          currentVersion: { ...baseCurrentVersionCondition, assistanceReceived: true },
+          updatedAt: {
+            gte: new Date(new Date().getFullYear(), 0, 1),
+          },
+        },
+      }),
+
+      // Households with many dependents (>= 4 tanggungan)
+      this.prisma.householdVersionDependent.groupBy({
+        by: ['householdVersionId'],
+        _count: { id: true },
+        where: {
+          householdVersion: {
+            ...currentVersionWhere,
+          },
+        },
+        having: {
+          id: {
+            _count: {
+              gte: 4,
+            },
+          },
         },
       }),
 
@@ -67,8 +147,7 @@ export class AnalyticsService {
       this.prisma.householdVersion.aggregate({
         _avg: { netIncome: true },
         where: {
-          household: { masjidId },
-          currentOfHousehold: { isNot: null },
+          ...currentVersionWhere,
         },
       }),
 
@@ -76,6 +155,7 @@ export class AnalyticsService {
       this.prisma.household.count({
         where: {
           masjidId,
+          ...(kampung ? { currentVersion: { village: kampung } } : {}),
           createdAt: {
             gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
           },
@@ -86,6 +166,7 @@ export class AnalyticsService {
       this.prisma.household.count({
         where: {
           masjidId,
+          ...(kampung ? { currentVersion: { village: kampung } } : {}),
           updatedAt: {
             lt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
           },
@@ -94,29 +175,40 @@ export class AnalyticsService {
     ]);
 
     const totalDependents = totalDependentsResult._count.id || 0;
-    const averageHouseholdSize = totalHouseholds > 0 
-      ? (totalHouseholds + totalDependents) / totalHouseholds 
-      : 0;
+    const totalIndividuals = totalHouseholds + totalDependents;
+    const averageHouseholdSize =
+      totalHouseholds > 0
+        ? (totalHouseholds + totalDependents) / totalHouseholds
+        : 0;
+    const totalManyDependentsHouseholds = manyDependentsGroups.length;
 
     return {
       totalHouseholds,
       totalDependents,
+      totalIndividuals,
       averageHouseholdSize: parseFloat(averageHouseholdSize.toFixed(2)),
       totalOwnHouse: ownHouseCount,
       totalRentHouse: rentHouseCount,
       totalReceivingAssistance: assistanceCount,
       totalWithDisability: disabilityCount,
-      averageIncome: avgIncomeResult._avg.netIncome 
-        ? parseFloat(avgIncomeResult._avg.netIncome.toString()) 
+      totalManyDependentsHouseholds,
+      assistedHouseholdsThisYear: assistedThisYearCount,
+      percentOwnHouse: this.calcPercent(ownHouseCount, totalHouseholds),
+      percentRentHouse: this.calcPercent(rentHouseCount, totalHouseholds),
+      percentReceivingAssistance: this.calcPercent(assistanceCount, totalHouseholds),
+      percentWithDisability: this.calcPercent(disabilityCount, totalHouseholds),
+      percentManyDependents: this.calcPercent(totalManyDependentsHouseholds, totalHouseholds),
+      averageIncome: avgIncomeResult._avg.netIncome
+        ? parseFloat(avgIncomeResult._avg.netIncome.toString())
         : 0,
       householdsThisMonth: thisMonthCount,
       staleRecords: staleRecordsCount,
     };
   }
 
-  async getIncomeDistribution(masjidId: string) {
+  async getIncomeDistribution(masjidId: string, kampung?: string) {
     const households = await this.prisma.household.findMany({
-      where: { masjidId },
+      where: kampung ? { masjidId, currentVersion: { village: kampung } } : { masjidId },
       include: {
         currentVersion: {
           select: { netIncome: true },
@@ -135,7 +227,7 @@ export class AnalyticsService {
 
     households.forEach((household) => {
       const income = household.currentVersion?.netIncome;
-      
+
       if (!income) {
         ranges[5].count++;
       } else {
@@ -154,18 +246,20 @@ export class AnalyticsService {
     return ranges.map(({ label, count }) => ({ range: label, count }));
   }
 
-  async getHousingStatus(masjidId: string) {
+  async getHousingStatus(masjidId: string, kampung?: string) {
+    const baseCurrentVersionCondition = kampung ? { village: kampung } : {};
+
     const [own, rent] = await Promise.all([
       this.prisma.household.count({
         where: {
           masjidId,
-          currentVersion: { housingStatus: 'SENDIRI' },
+          currentVersion: { ...baseCurrentVersionCondition, housingStatus: 'SENDIRI' },
         },
       }),
       this.prisma.household.count({
         where: {
           masjidId,
-          currentVersion: { housingStatus: 'SEWA' },
+          currentVersion: { ...baseCurrentVersionCondition, housingStatus: 'SEWA' },
         },
       }),
     ]);
@@ -173,9 +267,9 @@ export class AnalyticsService {
     return { own, rent };
   }
 
-  async getRecentSubmissions(masjidId: string, limit: number = 5) {
+  async getRecentSubmissions(masjidId: string, limit: number = 5, kampung?: string) {
     const households = await this.prisma.household.findMany({
-      where: { masjidId },
+      where: kampung ? { masjidId, currentVersion: { village: kampung } } : { masjidId },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: {

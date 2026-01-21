@@ -102,11 +102,6 @@ export default function LoginPage() {
                 'Log Masuk'
               )}
             </Button>
-
-            <div className="mt-6 pt-4 border-t text-center text-sm text-gray-600">
-              <p>Akaun Ujian:</p>
-              <p className="mt-1">admin@masjidalhuda.my / admin123</p>
-            </div>
           </form>
         </CardContent>
       </Card>

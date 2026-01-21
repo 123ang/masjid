@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateKampungDto, UpdateKampungDto } from './dto/create-kampung.dto';
 
@@ -9,7 +13,7 @@ export class KampungService {
   async create(createKampungDto: CreateKampungDto, masjidId: string) {
     // Check if name already exists for this masjid
     const existing = await this.prisma.kampung.findFirst({
-      where: { 
+      where: {
         name: createKampungDto.name,
         masjidId,
       },
@@ -33,7 +37,7 @@ export class KampungService {
 
   async findAll(masjidId: string) {
     const kampungs = await this.prisma.kampung.findMany({
-      where: { 
+      where: {
         masjidId,
         isActive: true, // Only return active kampungs for form dropdowns
       },
@@ -58,13 +62,17 @@ export class KampungService {
     return kampung;
   }
 
-  async update(id: string, updateKampungDto: UpdateKampungDto, masjidId: string) {
+  async update(
+    id: string,
+    updateKampungDto: UpdateKampungDto,
+    masjidId: string,
+  ) {
     const kampung = await this.findOne(id, masjidId);
 
     // Check if new name conflicts with existing for this masjid
     if (updateKampungDto.name && updateKampungDto.name !== kampung.name) {
       const existing = await this.prisma.kampung.findFirst({
-        where: { 
+        where: {
           name: updateKampungDto.name,
           masjidId,
         },

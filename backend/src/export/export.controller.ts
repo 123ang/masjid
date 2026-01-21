@@ -1,4 +1,11 @@
-import { Controller, Get, UseGuards, Request, Res, StreamableFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Request,
+  Res,
+  StreamableFile,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { ExportService } from './export.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -12,7 +19,7 @@ export class ExportController {
   @Get('excel')
   async exportExcel(@Request() req, @Res() res: Response) {
     const filePath = await this.exportService.exportToExcel(req.user.masjidId);
-    
+
     res.download(filePath, 'senarai-isi-rumah.xlsx', (err) => {
       if (err) {
         console.error('Download error:', err);
@@ -27,7 +34,7 @@ export class ExportController {
   @Get('csv')
   async exportCSV(@Request() req, @Res() res: Response) {
     const filePath = await this.exportService.exportToCSV(req.user.masjidId);
-    
+
     res.download(filePath, 'senarai-isi-rumah.csv', (err) => {
       if (err) {
         console.error('Download error:', err);

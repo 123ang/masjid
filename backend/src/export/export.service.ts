@@ -16,7 +16,9 @@ export class ExportService {
         currentVersion: {
           include: {
             dependents: { include: { person: true } },
-            disabilityMembers: { include: { person: true, disabilityType: true } },
+            disabilityMembers: {
+              include: { person: true, disabilityType: true },
+            },
             emergencyContacts: true,
           },
         },
@@ -56,8 +58,15 @@ export class ExportService {
         icNo: version?.icNo || '-',
         phone: version?.phone || '-',
         address: version?.address || '-',
-        netIncome: version?.netIncome ? parseFloat(version.netIncome.toString()) : 0,
-        housingStatus: version?.housingStatus === 'SENDIRI' ? 'Sendiri' : version?.housingStatus === 'SEWA' ? 'Sewa' : '-',
+        netIncome: version?.netIncome
+          ? parseFloat(version.netIncome.toString())
+          : 0,
+        housingStatus:
+          version?.housingStatus === 'SENDIRI'
+            ? 'Sendiri'
+            : version?.housingStatus === 'SEWA'
+              ? 'Sewa'
+              : '-',
         dependentsCount: version?.dependents?.length || 0,
         assistanceReceived: version?.assistanceReceived ? 'Ya' : 'Tidak',
         assistanceProvider: version?.assistanceProviderText || '-',
@@ -121,8 +130,15 @@ export class ExportService {
         icNo: version?.icNo || '-',
         phone: version?.phone || '-',
         address: version?.address || '-',
-        netIncome: version?.netIncome ? parseFloat(version.netIncome.toString()) : 0,
-        housingStatus: version?.housingStatus === 'SENDIRI' ? 'Sendiri' : version?.housingStatus === 'SEWA' ? 'Sewa' : '-',
+        netIncome: version?.netIncome
+          ? parseFloat(version.netIncome.toString())
+          : 0,
+        housingStatus:
+          version?.housingStatus === 'SENDIRI'
+            ? 'Sendiri'
+            : version?.housingStatus === 'SEWA'
+              ? 'Sewa'
+              : '-',
         dependentsCount: version?.dependents?.length || 0,
         assistanceReceived: version?.assistanceReceived ? 'Ya' : 'Tidak',
         assistanceProvider: version?.assistanceProviderText || '-',

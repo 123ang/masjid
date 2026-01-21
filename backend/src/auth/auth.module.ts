@@ -9,8 +9,9 @@ import { JwtStrategy } from './jwt.strategy';
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
-      signOptions: { 
+      secret:
+        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
+      signOptions: {
         expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any,
       },
     }),

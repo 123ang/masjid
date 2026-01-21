@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { KampungService } from './kampung.service';
 import { CreateKampungDto, UpdateKampungDto } from './dto/create-kampung.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -32,7 +42,11 @@ export class KampungController {
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  update(@Param('id') id: string, @Body() updateKampungDto: UpdateKampungDto, @Request() req) {
+  update(
+    @Param('id') id: string,
+    @Body() updateKampungDto: UpdateKampungDto,
+    @Request() req,
+  ) {
     return this.kampungService.update(id, updateKampungDto, req.user.masjidId);
   }
 

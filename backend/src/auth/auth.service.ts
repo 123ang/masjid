@@ -51,7 +51,9 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
+        secret:
+          process.env.JWT_SECRET ||
+          'your-super-secret-key-change-in-production',
       });
 
       const user = await this.prisma.user.findUnique({
@@ -88,12 +90,14 @@ export class AuthService {
     const payload = { sub: userId, email };
 
     const accessTokenOptions = {
-      secret: process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
+      secret:
+        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
       expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any,
     };
-    
+
     const refreshTokenOptions = {
-      secret: process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
+      secret:
+        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
       expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any,
     };
 

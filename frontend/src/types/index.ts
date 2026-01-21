@@ -139,11 +139,19 @@ export interface DisabilityType {
 export interface AnalyticsSummary {
   totalHouseholds: number;
   totalDependents: number;
+  totalIndividuals?: number;
   averageHouseholdSize: number;
   totalOwnHouse: number;
   totalRentHouse: number;
   totalReceivingAssistance: number;
   totalWithDisability: number;
+  totalManyDependentsHouseholds?: number;
+  assistedHouseholdsThisYear?: number;
+  percentOwnHouse?: number;
+  percentRentHouse?: number;
+  percentReceivingAssistance?: number;
+  percentWithDisability?: number;
+  percentManyDependents?: number;
   averageIncome: number;
   householdsThisMonth: number;
   staleRecords: number;

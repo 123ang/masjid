@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -126,7 +131,8 @@ export class UserService {
     // Prepare update data
     const updateData: any = {};
     if (updateUserDto.name !== undefined) updateData.name = updateUserDto.name;
-    if (updateUserDto.email !== undefined) updateData.email = updateUserDto.email;
+    if (updateUserDto.email !== undefined)
+      updateData.email = updateUserDto.email;
     if (updateUserDto.role !== undefined) updateData.role = updateUserDto.role;
 
     // Hash password if provided
