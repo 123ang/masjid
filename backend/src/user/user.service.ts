@@ -32,7 +32,8 @@ export class UserService {
         name: createUserDto.name,
         email: createUserDto.email,
         passwordHash,
-        role: createUserDto.role,
+        // Default role for newly created users
+        role: 'ADMIN',
         masjidId,
       },
       include: {
@@ -133,7 +134,6 @@ export class UserService {
     if (updateUserDto.name !== undefined) updateData.name = updateUserDto.name;
     if (updateUserDto.email !== undefined)
       updateData.email = updateUserDto.email;
-    if (updateUserDto.role !== undefined) updateData.role = updateUserDto.role;
 
     // Hash password if provided
     if (updateUserDto.password) {

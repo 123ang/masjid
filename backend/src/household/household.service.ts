@@ -113,9 +113,14 @@ export class HouseholdService {
   async findAll(masjidId: string, query: any = {}) {
     const {
       search,
+      applicantName,
+      icNo,
+      address,
       housingStatus,
       incomeMin,
       incomeMax,
+      dependentsMin,
+      dependentsMax,
       page = 1,
       limit = 20,
       sortBy = 'createdAt',
@@ -129,8 +134,12 @@ export class HouseholdService {
       incomeMin !== undefined ? parseFloat(incomeMin) : undefined;
     const incomeMaxNum =
       incomeMax !== undefined ? parseFloat(incomeMax) : undefined;
+    const dependentsMinNum =
+      dependentsMin !== undefined ? parseInt(dependentsMin, 10) : undefined;
+    const dependentsMaxNum =
+      dependentsMax !== undefined ? parseInt(dependentsMax, 10) : undefined;
 
-    const where: any = { masjidId };
+    const where: any = { masjidId, AND: [] };
     const currentVersionWhere: any = {};
 
     if (search) {
@@ -139,6 +148,21 @@ export class HouseholdService {
         { icNo: { contains: search, mode: 'insensitive' } },
         { address: { contains: search, mode: 'insensitive' } },
       ];
+    }
+
+    if (applicantName) {
+      currentVersionWhere.applicantName = {
+        contains: applicantName,
+        mode: 'insensitive',
+      };
+    }
+
+    if (icNo) {
+      currentVersionWhere.icNo = { contains: icNo, mode: 'insensitive' };
+    }
+
+    if (address) {
+      currentVersionWhere.address = { contains: address, mode: 'insensitive' };
     }
 
     if (housingStatus) {
@@ -156,7 +180,65 @@ export class HouseholdService {
     }
 
     if (Object.keys(currentVersionWhere).length > 0) {
-      where.currentVersion = currentVersionWhere;
+      where.AND.push({ currentVersion: currentVersionWhere });
+    }
+
+    // Dependents count filter (server-side)
+    if (dependentsMinNum !== undefined || dependentsMaxNum !== undefined) {
+      const min = dependentsMinNum ?? 0;
+      const max = dependentsMaxNum ?? Number.POSITIVE_INFINITY;
+
+      const or: any[] = [];
+
+      // Include households with 0 dependents when range includes 0.
+      if (min <= 0) {
+        if (max === 0) {
+          or.push({ currentVersion: { dependents: { none: {} } } });
+        } else {
+          or.push({ currentVersion: { dependents: { none: {} } } });
+        }
+      }
+
+      // For non-zero counts, use groupBy to get matching currentVersionIds
+      const minNonZero = Math.max(1, min);
+      const needNonZero = max >= 1;
+
+      if (needNonZero) {
+        const having: any = {
+          id: {
+            _count: {
+              gte: minNonZero,
+            },
+          },
+        };
+        if (Number.isFinite(max)) {
+          having.id._count.lte = max;
+        }
+
+        const grouped = await this.prisma.householdVersionDependent.groupBy({
+          by: ['householdVersionId'],
+          _count: { id: true },
+          where: {
+            householdVersion: {
+              household: { masjidId },
+              currentOfHousehold: { isNot: null },
+            },
+          },
+          having,
+        });
+
+        const matchingVersionIds = grouped.map((g) => g.householdVersionId);
+        if (matchingVersionIds.length > 0) {
+          or.push({ currentVersionId: { in: matchingVersionIds } });
+        }
+      }
+
+      // If nothing matches, return empty result early
+      if (or.length === 0) {
+        return { data: [], total: 0, page: pageNum, totalPages: 0 };
+      }
+
+      where.AND.push({ OR: or });
     }
 
     const skip = (pageNum - 1) * limitNum;

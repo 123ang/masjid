@@ -8,13 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Plus, Trash2, Edit, UserPlus } from 'lucide-react';
-import { User, UserRole } from '@/types';
+import { Loader2, Trash2, Edit, UserPlus } from 'lucide-react';
+import { User } from '@/types';
 
 export default function UserManagementPage() {
   const { user } = useAuth();
@@ -32,7 +31,6 @@ export default function UserManagementPage() {
     name: '',
     email: '',
     password: '',
-    role: UserRole.PENGURUSAN,
   });
 
   useEffect(() => {
@@ -66,7 +64,6 @@ export default function UserManagementPage() {
         const updateData: any = {
           name: formData.name,
           email: formData.email,
-          role: formData.role,
         };
         // Only include password if it's provided
         if (formData.password && formData.password.trim() !== '') {
@@ -76,7 +73,12 @@ export default function UserManagementPage() {
         setSuccess('Pengguna berjaya dikemaskini');
       } else {
         // Create - password is required
-        await api.post('/user', formData);
+        // Role is defaulted to ADMIN in backend
+        await api.post('/user', {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
         setSuccess('Pengguna berjaya ditambah');
       }
       setIsDialogOpen(false);
@@ -92,7 +94,6 @@ export default function UserManagementPage() {
       name: user.name,
       email: user.email,
       password: '', // Don't pre-fill password
-      role: user.role,
     });
     setEditingId(user.id);
     setIsEditMode(true);
@@ -100,7 +101,7 @@ export default function UserManagementPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', password: '', role: UserRole.PENGURUSAN });
+    setFormData({ name: '', email: '', password: '' });
     setIsEditMode(false);
     setEditingId(null);
   };
@@ -121,17 +122,6 @@ export default function UserManagementPage() {
       fetchUsers();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal memadam pengguna');
-    }
-  };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-red-100 text-red-800';
-      case 'IMAM':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -212,22 +202,6 @@ export default function UserManagementPage() {
                   className="w-full"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Peranan</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
-                    <SelectItem value={UserRole.IMAM}>Imam</SelectItem>
-                    <SelectItem value={UserRole.PENGURUSAN}>Pengurusan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <DialogFooter className="gap-2 sm:gap-0 pt-4">
                 <Button 
                   type="button" 
@@ -274,7 +248,6 @@ export default function UserManagementPage() {
               <TableRow>
                 <TableHead>Nama</TableHead>
                 <TableHead>E-mel</TableHead>
-                <TableHead>Peranan</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Tindakan</TableHead>
               </TableRow>
@@ -284,11 +257,6 @@ export default function UserManagementPage() {
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
-                  <TableCell>
-                    <Badge className={getRoleBadgeColor(u.role)}>
-                      {u.role}
-                    </Badge>
-                  </TableCell>
                   <TableCell>
                     {u.isActive ? (
                       <Badge className="bg-green-100 text-green-800">Aktif</Badge>
