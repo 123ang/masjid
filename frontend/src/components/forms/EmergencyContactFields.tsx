@@ -8,6 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2 } from 'lucide-react';
 import { EmergencyContact, HouseholdVersionDependent } from '@/types';
 
+// Extended type for internal UI state (includes source tracking)
+type EmergencyContactWithSource = EmergencyContact & {
+  source?: 'manual' | 'dependent';
+  selectedDependentIndex?: number;
+};
+
 interface EmergencyContactFieldsProps {
   emergencyContacts: EmergencyContact[];
   onChange: (contacts: EmergencyContact[]) => void;
@@ -21,9 +27,16 @@ export default function EmergencyContactFields({ emergencyContacts, onChange, de
   );
 
   const addContact = () => {
+    const newContact: EmergencyContactWithSource = { 
+      name: '', 
+      icNo: '', 
+      phone: '', 
+      relationship: '', 
+      source: 'manual' 
+    };
     onChange([
       ...emergencyContacts,
-      { name: '', icNo: '', phone: '', relationship: '', source: 'manual' },
+      newContact,
     ]);
   };
 
@@ -32,13 +45,13 @@ export default function EmergencyContactFields({ emergencyContacts, onChange, de
   };
 
   const updateContact = (index: number, field: string, value: string) => {
-    const updated = [...emergencyContacts];
+    const updated = [...emergencyContacts] as EmergencyContactWithSource[];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);
   };
 
   const handleSourceChange = (index: number, source: 'manual' | 'dependent') => {
-    const updated = [...emergencyContacts];
+    const updated = [...emergencyContacts] as EmergencyContactWithSource[];
     const currentContact = updated[index];
     
     if (source === 'dependent') {
@@ -64,7 +77,7 @@ export default function EmergencyContactFields({ emergencyContacts, onChange, de
     const selectedDependent = validDependents[depIndex];
     
     if (selectedDependent) {
-      const updated = [...emergencyContacts];
+      const updated = [...emergencyContacts] as EmergencyContactWithSource[];
       updated[index] = {
         ...updated[index],
         name: selectedDependent.fullName || '',
@@ -84,7 +97,8 @@ export default function EmergencyContactFields({ emergencyContacts, onChange, de
       </CardHeader>
       <CardContent className="space-y-4">
         {emergencyContacts.map((contact, index) => {
-          const source = (contact as any).source || 'manual';
+          const contactWithSource = contact as EmergencyContactWithSource;
+          const source = contactWithSource.source || 'manual';
           const isFromDependent = source === 'dependent';
           
           return (
@@ -133,8 +147,8 @@ export default function EmergencyContactFields({ emergencyContacts, onChange, de
                 <div>
                   <Label>Pilih Tanggungan</Label>
                   <Select
-                    value={((contact as any).selectedDependentIndex !== undefined) 
-                      ? String((contact as any).selectedDependentIndex) 
+                    value={(contactWithSource.selectedDependentIndex !== undefined) 
+                      ? String(contactWithSource.selectedDependentIndex) 
                       : ''}
                     onValueChange={(value) => handleDependentSelect(index, value)}
                   >
