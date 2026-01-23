@@ -183,54 +183,6 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
         </Alert>
       )}
 
-      {/* Poskod, Daerah, Negeri - Before Maklumat Pemohon */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Maklumat Lokasi</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="poskod">Poskod</Label>
-              <Select
-                onValueChange={(value) => setValue('poskod', value)}
-                value={poskod || undefined}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih poskod" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="07000">07000</SelectItem>
-                  <SelectItem value="07100">07100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="daerah">Daerah</Label>
-              <Input
-                id="daerah"
-                {...register('daerah')}
-                value={daerah}
-                readOnly
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="negeri">Negeri</Label>
-              <Input
-                id="negeri"
-                {...register('negeri')}
-                value={negeri}
-                readOnly
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Section A: Maklumat Pemohon */}
       <Card>
         <CardHeader>
@@ -290,6 +242,46 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
               placeholder="Alamat lengkap"
               rows={3}
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="poskod">Poskod</Label>
+              <Select
+                onValueChange={(value) => setValue('poskod', value)}
+                value={poskod || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih poskod" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="07000">07000</SelectItem>
+                  <SelectItem value="07100">07100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="daerah">Daerah</Label>
+              <Input
+                id="daerah"
+                {...register('daerah')}
+                value={daerah}
+                readOnly
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="negeri">Negeri</Label>
+              <Input
+                id="negeri"
+                {...register('negeri')}
+                value={negeri}
+                readOnly
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
           </div>
 
           <div>
