@@ -87,6 +87,9 @@ export interface HouseholdVersion {
   icNo?: string;
   phone?: string;
   address?: string;
+  poskod?: string;
+  daerah?: string;
+  negeri?: string;
   village?: string;
   netIncome?: number;
   housingStatus?: HousingStatus;
@@ -115,6 +118,9 @@ export interface CreateHouseholdDto {
   icNo?: string;
   phone?: string;
   address?: string;
+  poskod?: string;
+  daerah?: string;
+  negeri?: string;
   village?: string;
   netIncome?: number;
   housingStatus?: HousingStatus;

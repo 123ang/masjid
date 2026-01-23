@@ -25,12 +25,18 @@ interface HouseholdFormProps {
 
 export default function HouseholdForm({ initialData, onSuccess, onCancel }: HouseholdFormProps) {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CreateHouseholdDto>({
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      ...initialData,
+      daerah: initialData.daerah || 'Langkawi',
+      negeri: initialData.negeri || 'Kedah',
+    } : {
       assistanceReceived: false,
       disabilityInFamily: false,
       dependents: [],
       disabilityMembers: [],
       emergencyContacts: [],
+      daerah: 'Langkawi',
+      negeri: 'Kedah',
     },
   });
 
@@ -45,6 +51,18 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
 
   const assistanceReceived = watch('assistanceReceived');
   const disabilityInFamily = watch('disabilityInFamily');
+  const daerah = watch('daerah') || 'Langkawi';
+  const negeri = watch('negeri') || 'Kedah';
+
+  // Set default values for daerah and negeri
+  useEffect(() => {
+    if (!initialData?.daerah) {
+      setValue('daerah', 'Langkawi');
+    }
+    if (!initialData?.negeri) {
+      setValue('negeri', 'Kedah');
+    }
+  }, [initialData, setValue]);
 
   // Fetch kampung list on component mount
   useEffect(() => {
@@ -89,11 +107,17 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
         (dep: HouseholdVersionDependent) => dep.fullName?.trim() || dep.icNo?.trim() || dep.phone?.trim() || dep.relationship?.trim() || dep.occupation?.trim()
       );
 
+      // Clean emergency contacts - remove internal UI fields (source, selectedDependentIndex)
+      const cleanedEmergencyContacts = emergencyContacts.map((contact: any) => {
+        const { source, selectedDependentIndex, ...cleanContact } = contact;
+        return cleanContact;
+      });
+
       const payload = {
         ...data,
         dependents: validDependents,
         disabilityMembers: disabilityInFamily ? disabilityMembers : [],
-        emergencyContacts,
+        emergencyContacts: cleanedEmergencyContacts,
       };
 
       let response;
@@ -208,6 +232,46 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
               placeholder="Alamat lengkap"
               rows={3}
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="poskod">Poskod</Label>
+              <Select
+                onValueChange={(value) => setValue('poskod', value)}
+                defaultValue={initialData?.poskod}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih poskod" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="07000">07000</SelectItem>
+                  <SelectItem value="07100">07100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="daerah">Daerah</Label>
+              <Input
+                id="daerah"
+                {...register('daerah')}
+                value={daerah}
+                readOnly
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="negeri">Negeri</Label>
+              <Input
+                id="negeri"
+                {...register('negeri')}
+                value={negeri}
+                readOnly
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
           </div>
 
           <div>
@@ -347,6 +411,7 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
       <EmergencyContactFields
         emergencyContacts={emergencyContacts}
         onChange={setEmergencyContacts}
+        dependents={dependents}
       />
 
       {/* Action Buttons */}

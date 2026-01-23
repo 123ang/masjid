@@ -84,6 +84,18 @@ export class CreateHouseholdDto {
 
   @IsOptional()
   @IsString()
+  poskod?: string;
+
+  @IsOptional()
+  @IsString()
+  daerah?: string;
+
+  @IsOptional()
+  @IsString()
+  negeri?: string;
+
+  @IsOptional()
+  @IsString()
   village?: string;
 
   @IsOptional()

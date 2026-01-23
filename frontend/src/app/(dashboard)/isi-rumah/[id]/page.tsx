@@ -156,6 +156,27 @@ export default function HouseholdDetailPage() {
             <p className="font-medium">{currentVersion?.address || '-'}</p>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {currentVersion?.poskod && (
+              <div>
+                <p className="text-sm text-gray-600">Poskod</p>
+                <p className="font-medium">{currentVersion.poskod}</p>
+              </div>
+            )}
+            {currentVersion?.daerah && (
+              <div>
+                <p className="text-sm text-gray-600">Daerah</p>
+                <p className="font-medium">{currentVersion.daerah}</p>
+              </div>
+            )}
+            {currentVersion?.negeri && (
+              <div>
+                <p className="text-sm text-gray-600">Negeri</p>
+                <p className="font-medium">{currentVersion.negeri}</p>
+              </div>
+            )}
+          </div>
+
           {currentVersion?.village && (
             <div>
               <p className="text-sm text-gray-600">Nama Kampung</p>

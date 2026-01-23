@@ -117,6 +117,9 @@ model HouseholdVersion {
   icNo            String?  @map("ic_no")
   phone           String?
   address         String?
+  poskod          String?  // Postcode (07000 or 07100)
+  daerah          String?  @default("Langkawi") // District
+  negeri          String?  @default("Kedah") // State
   village         String?  // Nama Kampung
   netIncome       Decimal? @map("net_income") @db.Decimal(10, 2)
   housingStatus   HousingStatus? @map("housing_status")
