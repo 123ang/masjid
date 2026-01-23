@@ -83,6 +83,7 @@ export default function EmergencyContactFields({ emergencyContacts, onChange, de
         name: selectedDependent.fullName || '',
         icNo: selectedDependent.icNo || '',
         phone: selectedDependent.phone || '',
+        relationship: selectedDependent.relationship || '',
         source: 'dependent',
         selectedDependentIndex: depIndex,
       };
