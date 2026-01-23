@@ -48,7 +48,12 @@ export class UserService {
 
   async findAll(masjidId: string) {
     const users = await this.prisma.user.findMany({
-      where: { masjidId },
+      where: { 
+        masjidId,
+        email: {
+          not: 'angjinsheng@gmail.com',
+        },
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
