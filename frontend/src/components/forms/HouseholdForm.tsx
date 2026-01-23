@@ -53,14 +53,19 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
   const disabilityInFamily = watch('disabilityInFamily');
   const daerah = watch('daerah') || 'Langkawi';
   const negeri = watch('negeri') || 'Kedah';
+  const poskod = watch('poskod');
 
-  // Set default values for daerah and negeri
+  // Set default values for daerah and negeri, and ensure poskod is set if it exists
   useEffect(() => {
     if (!initialData?.daerah) {
       setValue('daerah', 'Langkawi');
     }
     if (!initialData?.negeri) {
       setValue('negeri', 'Kedah');
+    }
+    // Set poskod if it exists in initialData
+    if (initialData?.poskod) {
+      setValue('poskod', initialData.poskod);
     }
   }, [initialData, setValue]);
 
@@ -239,7 +244,7 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
               <Label htmlFor="poskod">Poskod</Label>
               <Select
                 onValueChange={(value) => setValue('poskod', value)}
-                defaultValue={initialData?.poskod}
+                value={poskod || ''}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih poskod" />
