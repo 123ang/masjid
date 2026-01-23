@@ -12,7 +12,7 @@ import { JwtStrategy } from './jwt.strategy';
       secret:
         process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
       signOptions: {
-        expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any,
+        expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any, // Changed from 15m to 7d for persistent login
       },
     }),
   ],

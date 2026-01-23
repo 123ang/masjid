@@ -92,13 +92,13 @@ export class AuthService {
     const accessTokenOptions = {
       secret:
         process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
-      expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any,
+      expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any, // Changed from 15m to 7d for persistent login
     };
 
     const refreshTokenOptions = {
       secret:
         process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
-      expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any,
+      expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as any, // Extended to 30 days for longer persistence
     };
 
     const [accessToken, refreshToken] = await Promise.all([
