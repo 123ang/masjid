@@ -23,17 +23,16 @@ export class AnalyticsService {
   }
 
   async getKampungs(masjidId: string) {
-    const rows = await this.prisma.householdVersion.findMany({
+    // Get all active kampungs from the Kampung table for this masjid
+    const kampungs = await this.prisma.kampung.findMany({
       where: {
-        household: { masjidId },
-        currentOfHousehold: { isNot: null },
-        village: { not: null },
+        masjidId,
+        isActive: true,
       },
-      distinct: ['village'],
-      select: { village: true },
-      orderBy: { village: 'asc' },
+      select: { name: true },
+      orderBy: { name: 'asc' },
     });
-    return rows.map((r) => r.village).filter((v): v is string => Boolean(v));
+    return kampungs.map((k) => k.name);
   }
 
   async getSummary(masjidId: string, kampung?: string) {
