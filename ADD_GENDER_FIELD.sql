@@ -23,8 +23,8 @@ UPDATE "household_version"
 SET "gender" = CASE
     WHEN LENGTH(ic_no) >= 12 THEN
         CASE
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::Gender
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::Gender
+            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::"Gender"
+            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::"Gender"
             ELSE NULL
         END
     ELSE NULL
@@ -39,8 +39,8 @@ UPDATE "person"
 SET "gender" = CASE
     WHEN LENGTH(ic_no) >= 12 THEN
         CASE
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::Gender
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::Gender
+            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::"Gender"
+            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::"Gender"
             ELSE NULL
         END
     ELSE NULL
