@@ -185,7 +185,16 @@ export default function UmumDashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <IncomeChart data={incomeData} />
             <HousingChart data={housingData} />
-            <GenderChart data={genderData} />
+          </div>
+        ),
+      },
+      {
+        key: 'gender',
+        content: (
+          <div className="flex justify-center">
+            <div className="w-full max-w-2xl">
+              <GenderChart data={genderData} />
+            </div>
           </div>
         ),
       },
