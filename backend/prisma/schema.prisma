@@ -1,4 +1,5 @@
 // Masjid Kariah Census System - Database Schema
+// Multi-Tenant Architecture
 
 generator client {
   provider = "prisma-client-js"
@@ -19,6 +20,17 @@ enum UserRole {
   PENGURUSAN
 }
 
+enum MasterRole {
+  SUPER_ADMIN   // Full access to everything
+  SUPPORT       // Can view and help tenants
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 enum HousingStatus {
   SENDIRI  // Own
   SEWA     // Rent
@@ -30,17 +42,63 @@ enum Gender {
 }
 
 // ============================================
+// MASTER ADMIN (Super users for master dashboard)
+// ============================================
+
+model MasterAdmin {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  name         String
+  role         MasterRole @default(SUPPORT)
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@map("master_admin")
+}
+
+// ============================================
+// TENANT (Multi-tenant support - each subdomain)
+// ============================================
+
+model Tenant {
+  id             String       @id @default(cuid())
+  slug           String       @unique // Subdomain: alhuda.i-masjid.my
+  name           String                // Display name: "Masjid Al-Huda"
+  status         TenantStatus @default(ACTIVE)
+  
+  // Branding/Settings
+  logo           String?               // URL to logo image
+  primaryColor   String?      @map("primary_color") @default("#16a34a")   // Green
+  secondaryColor String?      @map("secondary_color") @default("#15803d") // Darker green
+  
+  // Contact
+  email          String?
+  phone          String?
+  
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  masjid Masjid?
+
+  @@map("tenant")
+}
+
+// ============================================
 // MASJID (Tenant - Multi-masjid support)
 // ============================================
 
 model Masjid {
   id        String   @id @default(cuid())
+  tenantId  String?  @unique @map("tenant_id") // Link to tenant
   name      String
   address   String?
   phone     String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tenant     Tenant?     @relation(fields: [tenantId], references: [id])
   users      User[]
   households Household[]
   kampungs   Kampung[]
