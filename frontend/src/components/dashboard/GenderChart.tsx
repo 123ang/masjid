@@ -99,8 +99,8 @@ export default function GenderChart({ data }: GenderChartProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number, name: string, props: any) => [
-                    `${value} orang (${props.payload.percent.toFixed(1)}%)`,
+                  formatter={(value: number | undefined, name: string, props: any) => [
+                    `${value || 0} orang (${props.payload.percent.toFixed(1)}%)`,
                     name
                   ]}
                 />
