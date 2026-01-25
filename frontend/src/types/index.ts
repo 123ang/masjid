@@ -11,6 +11,11 @@ export enum HousingStatus {
   SEWA = 'SEWA',
 }
 
+export enum Gender {
+  LELAKI = 'LELAKI',
+  PEREMPUAN = 'PEREMPUAN',
+}
+
 export interface Masjid {
   id: string;
   name: string;
@@ -43,6 +48,7 @@ export interface Person {
   id: string;
   fullName: string;
   icNo?: string;
+  gender?: Gender;
   phone?: string;
 }
 
@@ -51,6 +57,7 @@ export interface HouseholdVersionDependent {
   personId?: string;
   fullName?: string;
   icNo?: string;
+  gender?: Gender;
   phone?: string;
   relationship?: string;
   occupation?: string;
@@ -85,6 +92,7 @@ export interface HouseholdVersion {
   createdAt: string;
   applicantName?: string;
   icNo?: string;
+  gender?: Gender;
   phone?: string;
   address?: string;
   poskod?: string;
@@ -116,6 +124,7 @@ export interface Household {
 export interface CreateHouseholdDto {
   applicantName?: string;
   icNo?: string;
+  gender?: Gender;
   phone?: string;
   address?: string;
   poskod?: string;
@@ -184,4 +193,14 @@ export interface HouseholdSearchParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+}
+
+export interface GenderDistribution {
+  lelaki: number;
+  perempuan: number;
+  unknown: number;
+  total: number;
+  percentLelaki: number;
+  percentPerempuan: number;
+  percentUnknown: number;
 }

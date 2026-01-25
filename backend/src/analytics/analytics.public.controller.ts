@@ -51,4 +51,14 @@ export class AnalyticsPublicController {
       await this.analyticsService.resolveMasjidId(masjidId);
     return this.analyticsService.getRecentSubmissions(resolvedMasjidId, 5, kampung);
   }
+
+  @Get('gender-distribution')
+  async getGenderDistribution(
+    @Query('masjidId') masjidId?: string,
+    @Query('kampung') kampung?: string,
+  ) {
+    const resolvedMasjidId =
+      await this.analyticsService.resolveMasjidId(masjidId);
+    return this.analyticsService.getGenderDistribution(resolvedMasjidId, kampung);
+  }
 }

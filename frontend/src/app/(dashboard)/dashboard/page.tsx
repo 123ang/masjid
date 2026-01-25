@@ -5,8 +5,9 @@ import api from '@/lib/api';
 import StatCard from '@/components/dashboard/StatCard';
 import IncomeChart from '@/components/dashboard/IncomeChart';
 import HousingChart from '@/components/dashboard/HousingChart';
+import GenderChart from '@/components/dashboard/GenderChart';
 import { Loader2, Users, TrendingUp, Home, Building, Heart, Accessibility } from 'lucide-react';
-import { AnalyticsSummary, IncomeDistribution } from '@/types';
+import { AnalyticsSummary, IncomeDistribution, GenderDistribution } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function DashboardPage() {
@@ -14,6 +15,15 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [incomeData, setIncomeData] = useState<IncomeDistribution[]>([]);
   const [housingData, setHousingData] = useState({ own: 0, rent: 0 });
+  const [genderData, setGenderData] = useState<GenderDistribution>({
+    lelaki: 0,
+    perempuan: 0,
+    unknown: 0,
+    total: 0,
+    percentLelaki: 0,
+    percentPerempuan: 0,
+    percentUnknown: 0,
+  });
   const [error, setError] = useState<string>('');
   const [kampungs, setKampungs] = useState<string[]>([]);
   const [selectedKampung, setSelectedKampung] = useState<string>('ALL');
@@ -40,15 +50,17 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const kampungParam = kampungValue && kampungValue !== 'ALL' ? kampungValue : undefined;
-      const [summaryRes, incomeRes, housingRes] = await Promise.all([
+      const [summaryRes, incomeRes, housingRes, genderRes] = await Promise.all([
         api.get('/analytics/summary', { params: { kampung: kampungParam } }),
         api.get('/analytics/income-distribution', { params: { kampung: kampungParam } }),
         api.get('/analytics/housing-status', { params: { kampung: kampungParam } }),
+        api.get('/analytics/gender-distribution', { params: { kampung: kampungParam } }),
       ]);
 
       setSummary(summaryRes.data);
       setIncomeData(incomeRes.data);
       setHousingData(housingRes.data);
+      setGenderData(genderRes.data);
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
       
@@ -182,6 +194,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <IncomeChart data={incomeData} />
         <HousingChart data={housingData} />
+      </div>
+
+      {/* Gender Chart - Full Width */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <GenderChart data={genderData} />
       </div>
     </div>
   );

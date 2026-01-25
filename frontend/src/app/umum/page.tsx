@@ -8,17 +8,27 @@ import api from '@/lib/api';
 import StatCard from '@/components/dashboard/StatCard';
 import IncomeChart from '@/components/dashboard/IncomeChart';
 import HousingChart from '@/components/dashboard/HousingChart';
+import GenderChart from '@/components/dashboard/GenderChart';
 import PublicDashboardCarousel, { PublicDashboardSlide } from '@/components/dashboard/PublicDashboardCarousel';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Users, TrendingUp, Home, Building, Heart, Accessibility } from 'lucide-react';
-import type { AnalyticsSummary, IncomeDistribution } from '@/types';
+import type { AnalyticsSummary, IncomeDistribution, GenderDistribution } from '@/types';
 
 export default function UmumDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [incomeData, setIncomeData] = useState<IncomeDistribution[]>([]);
   const [housingData, setHousingData] = useState({ own: 0, rent: 0 });
+  const [genderData, setGenderData] = useState<GenderDistribution>({
+    lelaki: 0,
+    perempuan: 0,
+    unknown: 0,
+    total: 0,
+    percentLelaki: 0,
+    percentPerempuan: 0,
+    percentUnknown: 0,
+  });
   const [error, setError] = useState<string>('');
   const [kampungs, setKampungs] = useState<string[]>([]);
   const [selectedKampung, setSelectedKampung] = useState<string>('ALL');
@@ -46,15 +56,17 @@ export default function UmumDashboardPage() {
     setLoading(true);
     try {
       const kampungParam = kampungValue && kampungValue !== 'ALL' ? kampungValue : undefined;
-      const [summaryRes, incomeRes, housingRes] = await Promise.all([
+      const [summaryRes, incomeRes, housingRes, genderRes] = await Promise.all([
         api.get('/analytics/public/summary', { params: { kampung: kampungParam } }),
         api.get('/analytics/public/income-distribution', { params: { kampung: kampungParam } }),
         api.get('/analytics/public/housing-status', { params: { kampung: kampungParam } }),
+        api.get('/analytics/public/gender-distribution', { params: { kampung: kampungParam } }),
       ]);
 
       setSummary(summaryRes.data);
       setIncomeData(incomeRes.data);
       setHousingData(housingRes.data);
+      setGenderData(genderRes.data);
     } catch (err: unknown) {
       console.error('Error fetching public dashboard data:', err);
 
@@ -173,11 +185,12 @@ export default function UmumDashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <IncomeChart data={incomeData} />
             <HousingChart data={housingData} />
+            <GenderChart data={genderData} />
           </div>
         ),
       },
     ],
-    [error, housingData, incomeData, summary]
+    [error, housingData, incomeData, summary, genderData]
   );
 
   if (loading) {

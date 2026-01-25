@@ -290,4 +290,76 @@ export class AnalyticsService {
       createdAt: h.createdAt,
     }));
   }
+
+  async getGenderDistribution(masjidId: string, kampung?: string) {
+    const currentVersionWhere = kampung
+      ? {
+          household: { masjidId },
+          currentOfHousehold: { isNot: null },
+          village: kampung,
+        }
+      : {
+          household: { masjidId },
+          currentOfHousehold: { isNot: null },
+        };
+
+    // Count applicants by gender
+    const applicantGenderCounts = await this.prisma.householdVersion.groupBy({
+      by: ['gender'],
+      _count: { gender: true },
+      where: currentVersionWhere,
+    });
+
+    // Count dependents by gender through Person table
+    const dependentGenderCounts = await this.prisma.person.groupBy({
+      by: ['gender'],
+      _count: { gender: true },
+      where: {
+        dependentOf: {
+          some: {
+            householdVersion: currentVersionWhere,
+          },
+        },
+      },
+    });
+
+    // Initialize counts
+    let lelakiCount = 0;
+    let perempuanCount = 0;
+    let unknownCount = 0;
+
+    // Sum applicant gender counts
+    applicantGenderCounts.forEach((item) => {
+      if (item.gender === 'LELAKI') {
+        lelakiCount += item._count.gender;
+      } else if (item.gender === 'PEREMPUAN') {
+        perempuanCount += item._count.gender;
+      } else if (item.gender === null) {
+        unknownCount += item._count.gender;
+      }
+    });
+
+    // Sum dependent gender counts
+    dependentGenderCounts.forEach((item) => {
+      if (item.gender === 'LELAKI') {
+        lelakiCount += item._count.gender;
+      } else if (item.gender === 'PEREMPUAN') {
+        perempuanCount += item._count.gender;
+      } else if (item.gender === null) {
+        unknownCount += item._count.gender;
+      }
+    });
+
+    const total = lelakiCount + perempuanCount + unknownCount;
+
+    return {
+      lelaki: lelakiCount,
+      perempuan: perempuanCount,
+      unknown: unknownCount,
+      total,
+      percentLelaki: this.calcPercent(lelakiCount, total),
+      percentPerempuan: this.calcPercent(perempuanCount, total),
+      percentUnknown: this.calcPercent(unknownCount, total),
+    };
+  }
 }

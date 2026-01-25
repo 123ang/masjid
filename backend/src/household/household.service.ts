@@ -37,6 +37,7 @@ export class HouseholdService {
             createdByUserId: userId,
             applicantName: createHouseholdDto.applicantName,
             icNo: createHouseholdDto.icNo,
+            gender: createHouseholdDto.gender,
             phone: createHouseholdDto.phone,
             address: createHouseholdDto.address,
             poskod: createHouseholdDto.poskod,
@@ -56,6 +57,7 @@ export class HouseholdService {
                     data: {
                       fullName: dep.fullName,
                       icNo: dep.icNo,
+                      gender: dep.gender,
                       phone: dep.phone,
                     },
                   });
@@ -344,6 +346,7 @@ export class HouseholdService {
         createdByUserId: userId,
         applicantName: updateHouseholdDto.applicantName,
         icNo: updateHouseholdDto.icNo,
+        gender: updateHouseholdDto.gender,
         phone: updateHouseholdDto.phone,
         address: updateHouseholdDto.address,
         poskod: updateHouseholdDto.poskod,
@@ -363,6 +366,7 @@ export class HouseholdService {
                 data: {
                   fullName: dep.fullName,
                   icNo: dep.icNo,
+                  gender: dep.gender,
                   phone: dep.phone,
                 },
               });

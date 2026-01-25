@@ -24,6 +24,11 @@ enum HousingStatus {
   SEWA     // Rent
 }
 
+enum Gender {
+  LELAKI    // Male
+  PEREMPUAN // Female
+}
+
 // ============================================
 // MASJID (Tenant - Multi-masjid support)
 // ============================================
@@ -115,6 +120,7 @@ model HouseholdVersion {
   // Section A: Applicant Info
   applicantName   String?  @map("applicant_name")
   icNo            String?  @map("ic_no")
+  gender          Gender?  // Gender
   phone           String?
   address         String?
   poskod          String?  // Postcode (07000 or 07100)
@@ -152,6 +158,7 @@ model Person {
   id        String   @id @default(cuid())
   fullName  String   @map("full_name")
   icNo      String?  @map("ic_no")
+  gender    Gender?  // Gender
   phone     String?
   createdAt DateTime @default(now()) @map("created_at")
 

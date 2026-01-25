@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Plus, Trash2, AlertCircle } from 'lucide-react';
-import { CreateHouseholdDto, HousingStatus, HouseholdVersionDependent } from '@/types';
+import { CreateHouseholdDto, HousingStatus, HouseholdVersionDependent, Gender } from '@/types';
 import api from '@/lib/api';
 import DependentFields from './DependentFields';
 import DisabilityFields from './DisabilityFields';
@@ -104,6 +104,25 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
       }
     } catch (err) {
       console.error('IC check error:', err);
+    }
+  };
+
+  // Function to detect gender from IC number
+  const detectGenderFromIC = (icNo: string): Gender | undefined => {
+    if (!icNo || icNo.length < 12) return undefined;
+    const lastDigit = parseInt(icNo.charAt(11));
+    return lastDigit % 2 === 0 ? Gender.PEREMPUAN : Gender.LELAKI;
+  };
+
+  // Handler for IC number change for applicant
+  const handleApplicantIcChange = (icNo: string) => {
+    setValue('icNo', icNo);
+    checkIcDuplicate(icNo);
+    
+    // Auto-detect gender
+    const detectedGender = detectGenderFromIC(icNo);
+    if (detectedGender) {
+      setValue('gender', detectedGender);
     }
   };
 
@@ -205,12 +224,27 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
                 id="icNo"
                 {...register('icNo')}
                 placeholder="780515015234"
-                maxLength={12}
-                onBlur={(e) => checkIcDuplicate(e.target.value)}
+                onChange={(e) => handleApplicantIcChange(e.target.value)}
               />
               {icWarning && (
                 <p className="text-sm text-red-600 mt-1">{icWarning}</p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="gender">Jantina</Label>
+              <Select
+                onValueChange={(value) => setValue('gender', value as Gender)}
+                value={watch('gender')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih jantina" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={Gender.LELAKI}>Lelaki</SelectItem>
+                  <SelectItem value={Gender.PEREMPUAN}>Perempuan</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

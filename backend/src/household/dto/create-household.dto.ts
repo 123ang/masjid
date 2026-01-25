@@ -10,6 +10,12 @@ import {
 import { Type } from 'class-transformer';
 import { HousingStatus } from '@prisma/client';
 
+// Add Gender enum
+export enum Gender {
+  LELAKI = 'LELAKI',
+  PEREMPUAN = 'PEREMPUAN',
+}
+
 class DependentDto {
   @IsString()
   fullName: string;
@@ -17,6 +23,10 @@ class DependentDto {
   @IsOptional()
   @IsString()
   icNo?: string;
+
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
 
   @IsOptional()
   @IsString()
@@ -73,6 +83,10 @@ export class CreateHouseholdDto {
   @IsOptional()
   @IsString()
   icNo?: string;
+
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
 
   @IsOptional()
   @IsString()

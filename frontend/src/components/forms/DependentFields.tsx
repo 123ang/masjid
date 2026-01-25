@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
-import { HouseholdVersionDependent } from '@/types';
+import { HouseholdVersionDependent, Gender } from '@/types';
 
 interface DependentFieldsProps {
   dependents: HouseholdVersionDependent[];
@@ -33,6 +34,24 @@ export default function DependentFields({ dependents, onChange }: DependentField
     const updated = [...dependents];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);
+  };
+
+  // Function to detect gender from IC number
+  const detectGenderFromIC = (icNo: string): Gender | undefined => {
+    if (!icNo || icNo.length < 12) return undefined;
+    const lastDigit = parseInt(icNo.charAt(11));
+    return lastDigit % 2 === 0 ? Gender.PEREMPUAN : Gender.LELAKI;
+  };
+
+  // Handler for IC number change for dependent
+  const handleDependentIcChange = (index: number, icNo: string) => {
+    updateDependent(index, 'icNo', icNo);
+    
+    // Auto-detect gender
+    const detectedGender = detectGenderFromIC(icNo);
+    if (detectedGender) {
+      updateDependent(index, 'gender', detectedGender);
+    }
   };
 
   return (
@@ -72,10 +91,25 @@ export default function DependentFields({ dependents, onChange }: DependentField
                 <Label>No. K/P</Label>
                 <Input
                   value={dependent.icNo || ''}
-                  onChange={(e) => updateDependent(index, 'icNo', e.target.value)}
+                  onChange={(e) => handleDependentIcChange(index, e.target.value)}
                   placeholder="780515015234"
-                  maxLength={12}
                 />
+              </div>
+
+              <div>
+                <Label>Jantina</Label>
+                <Select
+                  onValueChange={(value) => updateDependent(index, 'gender', value)}
+                  value={dependent.gender}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jantina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={Gender.LELAKI}>Lelaki</SelectItem>
+                    <SelectItem value={Gender.PEREMPUAN}>Perempuan</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -107,7 +141,7 @@ export default function DependentFields({ dependents, onChange }: DependentField
                 </datalist>
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <Label>Pekerjaan</Label>
                 <Input
                   value={dependent.occupation || ''}

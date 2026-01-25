@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import HouseholdForm from '@/components/forms/HouseholdForm';
 import { ArrowLeft, Edit, Loader2, User, Users, Heart, Phone } from 'lucide-react';
-import { Household } from '@/types';
+import { Household, Gender } from '@/types';
 
 export default function HouseholdDetailPage() {
   const params = useParams();
@@ -75,6 +75,7 @@ export default function HouseholdDetailPage() {
             dependents: currentVersion?.dependents?.map(d => ({
               fullName: d.person?.fullName || d.fullName || '',
               icNo: d.person?.icNo || d.icNo,
+              gender: d.person?.gender || d.gender,
               phone: d.person?.phone || d.phone,
               relationship: d.relationship,
               occupation: d.occupation,
@@ -127,6 +128,13 @@ export default function HouseholdDetailPage() {
             <div>
               <p className="text-sm text-gray-600">No. Kad Pengenalan</p>
               <p className="font-medium font-mono">{currentVersion?.icNo || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Jantina</p>
+              <p className="font-medium">
+                {currentVersion?.gender === Gender.LELAKI ? 'Lelaki' : 
+                 currentVersion?.gender === Gender.PEREMPUAN ? 'Perempuan' : '-'}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">No. Telefon</p>
@@ -212,6 +220,7 @@ export default function HouseholdDetailPage() {
                     <TableRow>
                       <TableHead>Nama</TableHead>
                       <TableHead>No. K/P</TableHead>
+                      <TableHead>Jantina</TableHead>
                       <TableHead>Hubungan</TableHead>
                       <TableHead>Pekerjaan</TableHead>
                     </TableRow>
@@ -221,6 +230,10 @@ export default function HouseholdDetailPage() {
                       <TableRow key={index}>
                         <TableCell>{dep.person?.fullName || dep.fullName || '-'}</TableCell>
                         <TableCell className="font-mono text-sm">{dep.person?.icNo || dep.icNo || '-'}</TableCell>
+                        <TableCell>
+                          {(dep.person?.gender || dep.gender) === Gender.LELAKI ? 'Lelaki' : 
+                           (dep.person?.gender || dep.gender) === Gender.PEREMPUAN ? 'Perempuan' : '-'}
+                        </TableCell>
                         <TableCell>{dep.relationship || '-'}</TableCell>
                         <TableCell>{dep.occupation || '-'}</TableCell>
                       </TableRow>

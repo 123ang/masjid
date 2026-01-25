@@ -31,4 +31,9 @@ export class AnalyticsController {
   getRecentSubmissions(@Request() req, @Query('kampung') kampung?: string) {
     return this.analyticsService.getRecentSubmissions(req.user.masjidId, 5, kampung);
   }
+
+  @Get('gender-distribution')
+  getGenderDistribution(@Request() req, @Query('kampung') kampung?: string) {
+    return this.analyticsService.getGenderDistribution(req.user.masjidId, kampung);
+  }
 }
