@@ -19,14 +19,30 @@ interface GenderChartProps {
 }
 
 export default function GenderChart({ data }: GenderChartProps) {
+  // Calculate chart total (only include items shown in chart)
+  const chartTotal = data.lelaki + data.perempuan + (data.unknown > 0 ? data.unknown : 0);
+  
+  // Calculate percentages based on chart data (not total including unknown if excluded)
   const chartData = [
-    { name: 'Lelaki', value: data.lelaki, percent: data.percentLelaki },
-    { name: 'Perempuan', value: data.perempuan, percent: data.percentPerempuan },
+    { 
+      name: 'Lelaki', 
+      value: data.lelaki, 
+      percent: chartTotal > 0 ? (data.lelaki / chartTotal) * 100 : 0 
+    },
+    { 
+      name: 'Perempuan', 
+      value: data.perempuan, 
+      percent: chartTotal > 0 ? (data.perempuan / chartTotal) * 100 : 0 
+    },
   ];
 
   // Only add unknown if there are unknown values
   if (data.unknown > 0) {
-    chartData.push({ name: 'Tidak Dinyatakan', value: data.unknown, percent: data.percentUnknown });
+    chartData.push({ 
+      name: 'Tidak Dinyatakan', 
+      value: data.unknown, 
+      percent: chartTotal > 0 ? (data.unknown / chartTotal) * 100 : 0 
+    });
   }
 
   const COLORS = ['#3b82f6', '#ec4899', '#9ca3af']; // Blue for Lelaki, Pink for Perempuan, Gray for Unknown
@@ -46,7 +62,7 @@ export default function GenderChart({ data }: GenderChartProps) {
         dominantBaseline="central"
         className="font-bold text-sm"
       >
-        {`${(percent * 100).toFixed(1)}%`}
+        {`${percent > 1 ? percent.toFixed(1) : (percent * 100).toFixed(1)}%`}
       </text>
     );
   };
@@ -66,15 +82,19 @@ export default function GenderChart({ data }: GenderChartProps) {
             <div className="p-3 bg-blue-50 rounded-lg">
               <p className="text-2xl font-bold text-blue-600">{data.lelaki}</p>
               <p className="text-xs text-gray-600">Lelaki</p>
-              <p className="text-xs font-semibold text-blue-600">{data.percentLelaki.toFixed(1)}%</p>
+              <p className="text-xs font-semibold text-blue-600">
+                {chartData.find(d => d.name === 'Lelaki')?.percent.toFixed(1) || '0.0'}%
+              </p>
             </div>
             <div className="p-3 bg-pink-50 rounded-lg">
               <p className="text-2xl font-bold text-pink-600">{data.perempuan}</p>
               <p className="text-xs text-gray-600">Perempuan</p>
-              <p className="text-xs font-semibold text-pink-600">{data.percentPerempuan.toFixed(1)}%</p>
+              <p className="text-xs font-semibold text-pink-600">
+                {chartData.find(d => d.name === 'Perempuan')?.percent.toFixed(1) || '0.0'}%
+              </p>
             </div>
             <div className="p-3 bg-purple-50 rounded-lg">
-              <p className="text-2xl font-bold text-purple-600">{data.total}</p>
+              <p className="text-2xl font-bold text-purple-600">{chartTotal}</p>
               <p className="text-xs text-gray-600">Jumlah</p>
               <p className="text-xs font-semibold text-purple-600">100%</p>
             </div>
@@ -99,10 +119,13 @@ export default function GenderChart({ data }: GenderChartProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number | undefined, name: string | undefined, props: any) => [
-                    `${value || 0} orang (${props.payload.percent.toFixed(1)}%)`,
-                    name || ''
-                  ]}
+                  formatter={(value: number | undefined, name: string | undefined, props: any) => {
+                    const percent = props.payload?.percent || 0;
+                    return [
+                      `${value || 0} orang (${percent.toFixed(1)}%)`,
+                      name || ''
+                    ];
+                  }}
                 />
                 <Legend />
               </PieChart>

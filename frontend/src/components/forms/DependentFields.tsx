@@ -38,8 +38,9 @@ export default function DependentFields({ dependents, onChange }: DependentField
 
   // Function to detect gender from IC number
   const detectGenderFromIC = (icNo: string): Gender | undefined => {
-    if (!icNo || icNo.length < 12) return undefined;
+    if (!icNo || icNo.length !== 12) return undefined;
     const lastDigit = parseInt(icNo.charAt(11));
+    if (isNaN(lastDigit)) return undefined;
     return lastDigit % 2 === 0 ? Gender.PEREMPUAN : Gender.LELAKI;
   };
 

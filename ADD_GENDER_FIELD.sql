@@ -21,34 +21,34 @@ ADD COLUMN IF NOT EXISTS "gender" "Gender";
 -- Last digit odd = LELAKI (Male), Last digit even = PEREMPUAN (Female)
 UPDATE "household_version"
 SET "gender" = CASE
-    WHEN LENGTH(ic_no) >= 12 THEN
+    WHEN LENGTH(ic_no) = 12 AND RIGHT(ic_no, 1) ~ '^[0-9]$' THEN
         CASE
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::"Gender"
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::"Gender"
+            WHEN CAST(RIGHT(ic_no, 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::"Gender"
+            WHEN CAST(RIGHT(ic_no, 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::"Gender"
             ELSE NULL
         END
     ELSE NULL
 END
 WHERE "gender" IS NULL 
   AND ic_no IS NOT NULL 
-  AND LENGTH(ic_no) >= 12
-  AND SUBSTRING(ic_no FROM 12 FOR 1) ~ '^[0-9]$';
+  AND LENGTH(ic_no) = 12
+  AND RIGHT(ic_no, 1) ~ '^[0-9]$';
 
 -- Step 5: Auto-populate gender based on IC number for dependents
 UPDATE "person"
 SET "gender" = CASE
-    WHEN LENGTH(ic_no) >= 12 THEN
+    WHEN LENGTH(ic_no) = 12 AND RIGHT(ic_no, 1) ~ '^[0-9]$' THEN
         CASE
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::"Gender"
-            WHEN CAST(SUBSTRING(ic_no FROM 12 FOR 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::"Gender"
+            WHEN CAST(RIGHT(ic_no, 1) AS INTEGER) % 2 = 1 THEN 'LELAKI'::"Gender"
+            WHEN CAST(RIGHT(ic_no, 1) AS INTEGER) % 2 = 0 THEN 'PEREMPUAN'::"Gender"
             ELSE NULL
         END
     ELSE NULL
 END
 WHERE "gender" IS NULL 
   AND ic_no IS NOT NULL 
-  AND LENGTH(ic_no) >= 12
-  AND SUBSTRING(ic_no FROM 12 FOR 1) ~ '^[0-9]$';
+  AND LENGTH(ic_no) = 12
+  AND RIGHT(ic_no, 1) ~ '^[0-9]$';
 
 -- Add comments for documentation
 COMMENT ON COLUMN "household_version"."gender" IS 'Gender of the applicant (LELAKI = Male, PEREMPUAN = Female)';
