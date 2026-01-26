@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
 import api from '@/lib/api';
+import { useTenant } from '@/context/TenantContext';
 import StatCard from '@/components/dashboard/StatCard';
 import IncomeChart from '@/components/dashboard/IncomeChart';
 import HousingChart from '@/components/dashboard/HousingChart';
@@ -16,6 +17,7 @@ import { Loader2, Users, TrendingUp, Home, Building, Heart, Accessibility } from
 import type { AnalyticsSummary, IncomeDistribution, GenderDistribution } from '@/types';
 
 export default function UmumDashboardPage() {
+  const { branding, isTenant, tenantInfo } = useTenant();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [incomeData, setIncomeData] = useState<IncomeDistribution[]>([]);
@@ -33,13 +35,18 @@ export default function UmumDashboardPage() {
   const [kampungs, setKampungs] = useState<string[]>([]);
   const [selectedKampung, setSelectedKampung] = useState<string>('ALL');
 
+  // Tenant display info
+  const masjidName = branding?.name || (isTenant ? tenantInfo.slug.toUpperCase() : 'Masjid');
+  const masjidLogo = branding?.logo || '/logo.png';
+  const primaryColor = branding?.primaryColor || '#16a34a';
+
   useEffect(() => {
     fetchKampungs();
-  }, []);
+  }, [tenantInfo.slug]); // Refetch when tenant changes
 
   useEffect(() => {
     fetchData(selectedKampung);
-  }, [selectedKampung]);
+  }, [selectedKampung, tenantInfo.slug]); // Refetch when tenant or kampung changes
 
   const fetchKampungs = async () => {
     try {
@@ -212,15 +219,37 @@ export default function UmumDashboardPage() {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-green-50 to-white overflow-hidden">
-      {/* Header */}
-      <header className="flex-shrink-0 px-4 sm:px-6 py-3">
+      {/* Header with tenant branding */}
+      <header 
+        className="flex-shrink-0 px-4 sm:px-6 py-3"
+        style={{ 
+          background: isTenant && branding?.primaryColor 
+            ? `linear-gradient(135deg, ${branding.primaryColor}10 0%, white 100%)` 
+            : undefined 
+        }}
+      >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Masjid Al-Huda Logo" width={40} height={40} className="object-contain" priority />
+            <Image 
+              src={masjidLogo} 
+              alt={`${masjidName} Logo`} 
+              width={40} 
+              height={40} 
+              className="object-contain" 
+              priority 
+            />
             <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">Papan Pemuka Umum</h1>
+              <h1 
+                className="text-base sm:text-lg font-bold truncate"
+                style={{ color: isTenant ? primaryColor : '#111827' }}
+              >
+                {isTenant ? masjidName : 'Papan Pemuka Umum'}
+              </h1>
               <p className="text-xs text-gray-600 truncate">
-                Sistem Bancian Anak Kariah Masjid Al-Huda Padang Matsirat
+                {isTenant 
+                  ? `Sistem Bancian Anak Kariah ${masjidName}`
+                  : 'Sistem Bancian Anak Kariah i-masjid.my'
+                }
               </p>
             </div>
           </div>
@@ -254,9 +283,27 @@ export default function UmumDashboardPage() {
       <footer className="flex-shrink-0 px-4 sm:px-6 py-3">
         <div className="flex flex-col items-center gap-1">
           <Link href="/login">
-            <Button size="sm" className="bg-green-600 hover:bg-green-700">Admin Login</Button>
+            <Button 
+              size="sm" 
+              style={{ 
+                backgroundColor: isTenant ? primaryColor : '#16a34a',
+              }}
+              className="hover:opacity-90"
+            >
+              Admin Login
+            </Button>
           </Link>
-          <p className="text-xs text-gray-500">Untuk akses penuh, sila log masuk sebagai admin.</p>
+          <p className="text-xs text-gray-500">
+            {isTenant 
+              ? `Untuk akses penuh ${masjidName}, sila log masuk sebagai admin.`
+              : 'Untuk akses penuh, sila log masuk sebagai admin.'
+            }
+          </p>
+          {isTenant && (
+            <p className="text-xs text-gray-400 mt-1">
+              Dikuasakan oleh <a href="https://i-masjid.my" className="underline hover:text-gray-600">i-masjid.my</a>
+            </p>
+          )}
         </div>
       </footer>
     </div>

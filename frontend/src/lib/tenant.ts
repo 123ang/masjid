@@ -20,6 +20,7 @@ export interface TenantInfo {
  * - i-masjid.my → { slug: '', isMasterDomain: true }
  * - www.i-masjid.my → { slug: '', isMasterDomain: true }
  * - localhost:3000 → { slug: '', isLocalhost: true }
+ * - localhost:3000?tenant=alhuda → { slug: 'alhuda', isLocalhost: true }
  */
 export function getTenantInfo(): TenantInfo {
   if (typeof window === 'undefined') {
@@ -34,8 +35,21 @@ export function getTenantInfo(): TenantInfo {
   const hostname = window.location.hostname;
   const fullDomain = window.location.host;
 
-  // Local development
+  // Local development - check for tenant query parameter
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Check for tenant query parameter for local testing
+    const urlParams = new URLSearchParams(window.location.search);
+    const tenantSlug = urlParams.get('tenant');
+    
+    if (tenantSlug) {
+      return {
+        slug: tenantSlug,
+        isMasterDomain: false,
+        isLocalhost: true,
+        fullDomain,
+      };
+    }
+    
     return {
       slug: '',
       isMasterDomain: false,

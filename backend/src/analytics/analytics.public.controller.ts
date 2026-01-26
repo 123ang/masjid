@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Req } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { AnalyticsService } from './analytics.service';
 
 @Controller('analytics/public')

@@ -26,7 +26,12 @@ export class TenantMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     // Extract subdomain from host header
     const host = req.headers['x-forwarded-host'] as string || req.headers.host || '';
-    const subdomain = this.extractSubdomain(host);
+    let subdomain = this.extractSubdomain(host);
+
+    // For localhost development, check X-Tenant-Slug header
+    if (!subdomain && (host.includes('localhost') || host.includes('127.0.0.1'))) {
+      subdomain = req.headers['x-tenant-slug'] as string || null;
+    }
 
     // If no subdomain or main domain, skip tenant resolution
     if (!subdomain || subdomain === 'www') {
@@ -82,9 +87,8 @@ export class TenantMiddleware implements NestMiddleware {
     // Remove port if present
     const hostWithoutPort = host.split(':')[0];
 
-    // Handle localhost development
+    // Handle localhost development - subdomain extraction happens in use() method
     if (hostWithoutPort === 'localhost' || hostWithoutPort === '127.0.0.1') {
-      // For local development, check for X-Tenant-Slug header
       return null;
     }
 

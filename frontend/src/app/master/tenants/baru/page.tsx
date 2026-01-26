@@ -9,7 +9,10 @@ import {
   Loader2,
   Check,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Upload,
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +46,8 @@ export default function CreateTenantPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState<CreateTenantResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -50,6 +55,7 @@ export default function CreateTenantPage() {
     name: '',
     email: '',
     phone: '',
+    logo: '',
     primaryColor: '#16a34a',
     secondaryColor: '#15803d',
     masjidName: '',
@@ -85,6 +91,38 @@ export default function CreateTenantPage() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Hanya fail imej dibenarkan');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Saiz fail terlalu besar. Maksimum 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Store file for upload after tenant creation
+    setFormData({ ...formData, logo: URL.createObjectURL(file) });
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData({ ...formData, logo: '' });
+    setLogoPreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -92,11 +130,44 @@ export default function CreateTenantPage() {
 
     try {
       const token = localStorage.getItem('masterAccessToken');
+      
+      // Step 1: Create tenant
       const response = await axios.post<CreateTenantResult>(
         `${getApiUrl()}/master/tenants`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
+      // Step 2: Upload logo if provided
+      if (logoPreview) {
+        try {
+          setUploading(true);
+          const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
+          const file = fileInput?.files?.[0];
+          
+          if (file) {
+            const formDataToUpload = new FormData();
+            formDataToUpload.append('file', file);
+            
+            await axios.post(
+              `${getApiUrl()}/master/tenants/${response.data.tenant.slug}/upload-logo`,
+              formDataToUpload,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'multipart/form-data',
+                },
+              }
+            );
+          }
+        } catch (uploadErr: any) {
+          console.error('Logo upload failed:', uploadErr);
+          // Don't fail the whole operation if logo upload fails
+        } finally {
+          setUploading(false);
+        }
+      }
+      
       setSuccess(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal mencipta tenant');
@@ -180,6 +251,7 @@ export default function CreateTenantPage() {
                     name: '',
                     email: '',
                     phone: '',
+                    logo: '',
                     primaryColor: '#16a34a',
                     secondaryColor: '#15803d',
                     masjidName: '',
@@ -189,6 +261,7 @@ export default function CreateTenantPage() {
                     adminEmail: '',
                     adminPassword: '',
                   });
+                  setLogoPreview(null);
                 }}
               >
                 Tambah Lagi
@@ -215,8 +288,8 @@ export default function CreateTenantPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-purple-600" />
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <Building2 className="h-6 w-6 text-green-600" />
             </div>
             <div>
               <CardTitle>Tambah Tenant Baru</CardTitle>
@@ -237,6 +310,61 @@ export default function CreateTenantPage() {
               <h3 className="font-medium text-gray-900 border-b pb-2">
                 Maklumat Tenant
               </h3>
+
+              {/* Logo Upload */}
+              <div className="space-y-2">
+                <Label>Logo Masjid (Pilihan)</Label>
+                <div className="flex items-start gap-4">
+                  {logoPreview ? (
+                    <div className="relative w-24 h-24">
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="w-full h-full object-contain border rounded-lg bg-white p-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 shadow-lg"
+                        title="Buang logo"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-gray-50">
+                      <ImageIcon className="h-6 w-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      disabled={loading || uploading}
+                      className="hidden"
+                      id="logo-upload"
+                    />
+                    <Label htmlFor="logo-upload">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={loading || uploading}
+                        className="cursor-pointer"
+                        asChild
+                      >
+                        <span>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Pilih Logo
+                        </span>
+                      </Button>
+                    </Label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      JPG, PNG, GIF. Maks 5MB
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -429,13 +557,13 @@ export default function CreateTenantPage() {
               </Link>
               <Button 
                 type="submit" 
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                disabled={loading}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={loading || uploading}
               >
-                {loading ? (
+                {loading || uploading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Mencipta...
+                    {uploading ? 'Memuat naik logo...' : 'Mencipta...'}
                   </>
                 ) : (
                   <>

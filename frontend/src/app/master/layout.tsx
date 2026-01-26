@@ -14,6 +14,7 @@ import {
   Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
 
 interface MasterAdmin {
   id: string;
@@ -34,17 +35,133 @@ export default function MasterLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in as master admin
-    const storedAdmin = localStorage.getItem('masterAdmin');
-    const accessToken = localStorage.getItem('masterAccessToken');
+    const checkAuth = async () => {
+      const storedAdmin = localStorage.getItem('masterAdmin');
+      const accessToken = localStorage.getItem('masterAccessToken');
+      const refreshToken = localStorage.getItem('masterRefreshToken');
 
-    if (storedAdmin && accessToken) {
-      setAdmin(JSON.parse(storedAdmin));
-    } else if (!pathname.includes('/master/login')) {
-      router.push('/master/login');
-    }
+      // If no tokens at all, redirect to login (unless already on login page)
+      if (!accessToken && !refreshToken) {
+        if (!pathname.includes('/master/login')) {
+          router.push('/master/login');
+        }
+        setLoading(false);
+        return;
+      }
 
-    setLoading(false);
+      // If we have tokens, validate them
+      if (accessToken || refreshToken) {
+        try {
+          const getApiUrl = () => {
+            if (typeof window !== 'undefined') {
+              const isProduction = window.location.hostname !== 'localhost' && 
+                                  window.location.hostname !== '127.0.0.1';
+              if (isProduction) {
+                return '/api';
+              }
+            }
+            return 'http://localhost:3001/api';
+          };
+
+          // First, try to validate current access token by calling /me
+          if (accessToken) {
+            try {
+              const meResponse = await axios.get(`${getApiUrl()}/master/auth/me`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              
+              // Token is valid, set admin
+              setAdmin(meResponse.data);
+              setLoading(false);
+              return;
+            } catch (error: any) {
+              // Access token is invalid/expired, try to refresh
+              if (error.response?.status === 401 && refreshToken) {
+                try {
+                  const refreshResponse = await axios.post(`${getApiUrl()}/master/auth/refresh`, {
+                    refreshToken,
+                  });
+
+                  // Update tokens
+                  localStorage.setItem('masterAccessToken', refreshResponse.data.accessToken);
+                  localStorage.setItem('masterRefreshToken', refreshResponse.data.refreshToken);
+                  
+                  // Get admin info with new token
+                  const meResponse = await axios.get(`${getApiUrl()}/master/auth/me`, {
+                    headers: { Authorization: `Bearer ${refreshResponse.data.accessToken}` },
+                  });
+                  
+                  localStorage.setItem('masterAdmin', JSON.stringify(meResponse.data));
+                  setAdmin(meResponse.data);
+                  setLoading(false);
+                  return;
+                } catch (refreshError) {
+                  // Refresh failed, clear everything and redirect to login
+                  localStorage.removeItem('masterAccessToken');
+                  localStorage.removeItem('masterRefreshToken');
+                  localStorage.removeItem('masterAdmin');
+                  if (!pathname.includes('/master/login')) {
+                    router.push('/master/login');
+                  }
+                  setLoading(false);
+                  return;
+                }
+              } else {
+                // No refresh token or other error, clear and redirect
+                localStorage.removeItem('masterAccessToken');
+                localStorage.removeItem('masterRefreshToken');
+                localStorage.removeItem('masterAdmin');
+                if (!pathname.includes('/master/login')) {
+                  router.push('/master/login');
+                }
+                setLoading(false);
+                return;
+              }
+            }
+          } else if (refreshToken) {
+            // Only refresh token available, try to refresh
+            try {
+              const refreshResponse = await axios.post(`${getApiUrl()}/master/auth/refresh`, {
+                refreshToken,
+              });
+
+              localStorage.setItem('masterAccessToken', refreshResponse.data.accessToken);
+              localStorage.setItem('masterRefreshToken', refreshResponse.data.refreshToken);
+              
+              const meResponse = await axios.get(`${getApiUrl()}/master/auth/me`, {
+                headers: { Authorization: `Bearer ${refreshResponse.data.accessToken}` },
+              });
+              
+              localStorage.setItem('masterAdmin', JSON.stringify(meResponse.data));
+              setAdmin(meResponse.data);
+              setLoading(false);
+              return;
+            } catch (refreshError) {
+              localStorage.removeItem('masterAccessToken');
+              localStorage.removeItem('masterRefreshToken');
+              localStorage.removeItem('masterAdmin');
+              if (!pathname.includes('/master/login')) {
+                router.push('/master/login');
+              }
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (error) {
+          // Fallback: if stored admin exists, use it (but this shouldn't happen)
+          if (storedAdmin) {
+            setAdmin(JSON.parse(storedAdmin));
+          } else if (!pathname.includes('/master/login')) {
+            router.push('/master/login');
+          }
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, [pathname, router]);
 
   const handleLogout = () => {

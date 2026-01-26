@@ -93,21 +93,12 @@ export class MasterAuthService {
       isMaster: true, // Flag to identify master admin tokens
     };
 
-    const accessTokenOptions = {
-      secret:
-        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
-      expiresIn: '7d',
-    };
-
-    const refreshTokenOptions = {
-      secret:
-        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
-      expiresIn: '30d',
-    };
+    const secret =
+      process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, accessTokenOptions),
-      this.jwtService.signAsync(payload, refreshTokenOptions),
+      this.jwtService.signAsync(payload, { secret, expiresIn: 60 * 60 * 24 * 7 }), // 7 days in seconds
+      this.jwtService.signAsync(payload, { secret, expiresIn: 60 * 60 * 24 * 30 }), // 30 days in seconds
     ]);
 
     return {

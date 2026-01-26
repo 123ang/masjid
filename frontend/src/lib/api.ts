@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getTenantInfo } from './tenant';
 
 // Determine API URL based on environment
 // In production, use relative URL (works with both domains via Nginx)
@@ -34,13 +35,22 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token and tenant header for local testing
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // For localhost testing, send tenant slug in header
+    if (typeof window !== 'undefined') {
+      const tenantInfo = getTenantInfo();
+      if (tenantInfo.isLocalhost && tenantInfo.slug) {
+        config.headers['X-Tenant-Slug'] = tenantInfo.slug;
+      }
+    }
+    
     return config;
   },
   (error) => {

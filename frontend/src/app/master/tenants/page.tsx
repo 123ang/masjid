@@ -133,7 +133,7 @@ export default function TenantsPage() {
           <p className="text-gray-500">Urus semua masjid dalam platform</p>
         </div>
         <Link href="/master/tenants/baru">
-          <Button className="bg-purple-600 hover:bg-purple-700">
+          <Button className="bg-purple-600 hover:bg-purple-700 text-white">
             <Plus className="h-4 w-4 mr-2" />
             Tambah Tenant Baru
           </Button>

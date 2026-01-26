@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ export default function MasterLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const getApiUrl = () => {
     if (typeof window !== 'undefined') {
@@ -28,6 +29,95 @@ export default function MasterLoginPage() {
     }
     return 'http://localhost:3001/api';
   };
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      const accessToken = localStorage.getItem('masterAccessToken');
+      const refreshToken = localStorage.getItem('masterRefreshToken');
+
+      if (!accessToken && !refreshToken) {
+        setCheckingAuth(false);
+        return;
+      }
+
+      try {
+        // Try to validate access token
+        if (accessToken) {
+          try {
+            await axios.get(`${getApiUrl()}/master/auth/me`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            // Token is valid, redirect to dashboard
+            router.push('/master/dashboard');
+            return;
+          } catch (error: any) {
+            // Access token invalid, try refresh token
+            if (error.response?.status === 401 && refreshToken) {
+              try {
+                const refreshResponse = await axios.post(`${getApiUrl()}/master/auth/refresh`, {
+                  refreshToken,
+                });
+                
+                localStorage.setItem('masterAccessToken', refreshResponse.data.accessToken);
+                localStorage.setItem('masterRefreshToken', refreshResponse.data.refreshToken);
+                
+                // Get admin info
+                const meResponse = await axios.get(`${getApiUrl()}/master/auth/me`, {
+                  headers: { Authorization: `Bearer ${refreshResponse.data.accessToken}` },
+                });
+                
+                localStorage.setItem('masterAdmin', JSON.stringify(meResponse.data));
+                router.push('/master/dashboard');
+                return;
+              } catch (refreshError) {
+                // Refresh failed, clear tokens and show login
+                localStorage.removeItem('masterAccessToken');
+                localStorage.removeItem('masterRefreshToken');
+                localStorage.removeItem('masterAdmin');
+              }
+            } else {
+              // No refresh token or other error, clear tokens
+              localStorage.removeItem('masterAccessToken');
+              localStorage.removeItem('masterRefreshToken');
+              localStorage.removeItem('masterAdmin');
+            }
+          }
+        } else if (refreshToken) {
+          // Only refresh token available
+          try {
+            const refreshResponse = await axios.post(`${getApiUrl()}/master/auth/refresh`, {
+              refreshToken,
+            });
+            
+            localStorage.setItem('masterAccessToken', refreshResponse.data.accessToken);
+            localStorage.setItem('masterRefreshToken', refreshResponse.data.refreshToken);
+            
+            const meResponse = await axios.get(`${getApiUrl()}/master/auth/me`, {
+              headers: { Authorization: `Bearer ${refreshResponse.data.accessToken}` },
+            });
+            
+            localStorage.setItem('masterAdmin', JSON.stringify(meResponse.data));
+            router.push('/master/dashboard');
+            return;
+          } catch (refreshError) {
+            localStorage.removeItem('masterAccessToken');
+            localStorage.removeItem('masterRefreshToken');
+            localStorage.removeItem('masterAdmin');
+          }
+        }
+      } catch (error) {
+        // Clear invalid tokens
+        localStorage.removeItem('masterAccessToken');
+        localStorage.removeItem('masterRefreshToken');
+        localStorage.removeItem('masterAdmin');
+      }
+      
+      setCheckingAuth(false);
+    };
+
+    checkExistingAuth();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,17 +145,28 @@ export default function MasterLoginPage() {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-green-600 mx-auto mb-4" />
+          <p className="text-gray-600">Memeriksa sesi...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-lg border-2">
         <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-            <Shield className="h-8 w-8 text-purple-600" />
+          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <Shield className="h-8 w-8 text-green-600" />
           </div>
-          <CardTitle className="text-2xl font-bold text-purple-900">
+          <CardTitle className="text-2xl font-bold text-green-700">
             i-masjid.my
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-600">
             Master Admin Portal
           </CardDescription>
         </CardHeader>
@@ -78,7 +179,7 @@ export default function MasterLoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">E-mel</Label>
+              <Label htmlFor="email" className="text-gray-700">E-mel</Label>
               <Input
                 id="email"
                 type="email"
@@ -87,11 +188,12 @@ export default function MasterLoginPage() {
                 placeholder="admin@i-masjid.my"
                 required
                 disabled={loading}
+                className="border-gray-300 focus:border-green-500 focus:ring-green-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Kata Laluan</Label>
+              <Label htmlFor="password" className="text-gray-700">Kata Laluan</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -101,6 +203,7 @@ export default function MasterLoginPage() {
                   placeholder="••••••••"
                   required
                   disabled={loading}
+                  className="border-gray-300 focus:border-green-500 focus:ring-green-500"
                 />
                 <button
                   type="button"
@@ -114,7 +217,7 @@ export default function MasterLoginPage() {
 
             <Button 
               type="submit" 
-              className="w-full bg-purple-600 hover:bg-purple-700"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
               disabled={loading}
             >
               {loading ? (

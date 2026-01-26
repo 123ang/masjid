@@ -96,7 +96,7 @@ export class TenantService {
       });
 
       // 3. Create admin user if credentials provided
-      let adminUser = null;
+      let adminUser: Record<string, unknown> | null = null;
       if (createTenantDto.adminEmail && createTenantDto.adminPassword) {
         // Check if email already exists
         const existingUser = await tx.user.findUnique({
@@ -111,7 +111,7 @@ export class TenantService {
 
         const passwordHash = await bcrypt.hash(createTenantDto.adminPassword, 10);
 
-        adminUser = await tx.user.create({
+        const createdUser = await tx.user.create({
           data: {
             masjidId: masjid.id,
             name: createTenantDto.adminName || 'Admin',
@@ -123,7 +123,7 @@ export class TenantService {
         });
 
         // Remove password from response
-        const { passwordHash: _, ...userWithoutPassword } = adminUser;
+        const { passwordHash: _, ...userWithoutPassword } = createdUser;
         adminUser = userWithoutPassword;
       }
 

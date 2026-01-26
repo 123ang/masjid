@@ -1,9 +1,24 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  // Serve static files for uploaded logos
+  // In development: dist/uploads/logos
+  // In production: uploads/logos
+  const uploadsPath = process.env.NODE_ENV === 'production' 
+    ? join(__dirname, '..', '..', 'uploads', 'logos')
+    : join(__dirname, '..', '..', 'uploads', 'logos');
+  
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/api/uploads/logos/',
+  });
+  
+  console.log(`📁 Serving static files from: ${uploadsPath}`);
 
   // Enable CORS with dynamic origin for multi-tenant subdomains
   app.enableCors({

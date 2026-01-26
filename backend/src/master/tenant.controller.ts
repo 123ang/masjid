@@ -8,7 +8,13 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { TenantService } from './tenant.service';
 import { CreateTenantDto, UpdateTenantDto } from './dto/create-tenant.dto';
 import { MasterAuthGuard } from './guards/master-auth.guard';
@@ -52,6 +58,51 @@ export class TenantController {
     @Body() updateTenantDto: UpdateTenantDto,
   ) {
     return this.tenantService.update(slug, updateTenantDto);
+  }
+
+  @Post(':slug/upload-logo')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/logos',
+        filename: (req, file, cb) => {
+          const tenantSlug = req.params.slug;
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${tenantSlug}-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+          return cb(new BadRequestException('Hanya fail imej dibenarkan'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  async uploadLogo(
+    @Param('slug') slug: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Tiada fail dimuat naik');
+    }
+
+    // Construct the URL - use full URL for frontend access
+    // In production, replace with your actual domain/CDN
+    const baseUrl = process.env.API_URL || 'http://localhost:3001';
+    const logoUrl = `${baseUrl}/api/uploads/logos/${file.filename}`;
+    
+    // Update tenant with logo URL
+    await this.tenantService.update(slug, { logo: logoUrl });
+
+    return {
+      message: 'Logo berjaya dimuat naik',
+      logoUrl,
+    };
   }
 
   @Delete(':slug')
