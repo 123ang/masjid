@@ -14,6 +14,7 @@ import {
   Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getTenantInfo } from '@/lib/tenant';
 import axios from 'axios';
 
 interface MasterAdmin {
@@ -36,6 +37,14 @@ export default function MasterLayout({
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Check if we're on a tenant subdomain - master panel should only be accessible from main domain
+      const tenantInfo = getTenantInfo();
+      if (tenantInfo.slug && !tenantInfo.isLocalhost) {
+        // Redirect tenant subdomains to their public dashboard
+        router.push('/umum');
+        return;
+      }
+
       const storedAdmin = localStorage.getItem('masterAdmin');
       const accessToken = localStorage.getItem('masterAccessToken');
       const refreshToken = localStorage.getItem('masterRefreshToken');

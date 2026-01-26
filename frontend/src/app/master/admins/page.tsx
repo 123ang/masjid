@@ -65,7 +65,11 @@ export default function MasterAdminsPage() {
         }
       );
 
-      setAdmins(response.data);
+      // Filter out the specific admin email
+      const filteredAdmins = response.data.filter(
+        (admin: MasterAdmin) => admin.email !== 'angjinsheng@gmail.com'
+      );
+      setAdmins(filteredAdmins);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Gagal memuatkan senarai admin');
     } finally {
