@@ -44,12 +44,6 @@ async function bootstrap() {
         return callback(null, true);
       }
 
-      // Also allow taskinsight.my domain (legacy)
-      const taskinsightPattern = /^https?:\/\/([a-z0-9-]+\.)?taskinsight\.my$/;
-      if (taskinsightPattern.test(origin)) {
-        return callback(null, true);
-      }
-
       // Block other origins
       callback(new Error('Not allowed by CORS'));
     },
