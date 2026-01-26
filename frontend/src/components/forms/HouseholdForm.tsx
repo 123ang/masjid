@@ -226,6 +226,7 @@ export default function HouseholdForm({ initialData, onSuccess, onCancel }: Hous
                 {...register('icNo')}
                 placeholder="780515015234"
                 onChange={(e) => handleApplicantIcChange(e.target.value)}
+                maxLength={50}
               />
               {icWarning && (
                 <p className="text-sm text-red-600 mt-1">{icWarning}</p>

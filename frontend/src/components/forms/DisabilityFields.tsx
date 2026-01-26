@@ -83,7 +83,7 @@ export default function DisabilityFields({ disabilityMembers, onChange }: Disabi
                 value={member.icNo || ''}
                 onChange={(e) => updateMember(index, 'icNo', e.target.value)}
                 placeholder="780515015234"
-                maxLength={12}
+                maxLength={50}
               />
             </div>
 

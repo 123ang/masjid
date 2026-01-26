@@ -94,6 +94,7 @@ export default function DependentFields({ dependents, onChange }: DependentField
                   value={dependent.icNo || ''}
                   onChange={(e) => handleDependentIcChange(index, e.target.value)}
                   placeholder="780515015234"
+                  maxLength={50}
                 />
               </div>
 

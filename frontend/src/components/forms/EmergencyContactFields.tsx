@@ -195,7 +195,7 @@ export default function EmergencyContactFields({ emergencyContacts, onChange, de
                     value={contact.icNo || ''}
                     onChange={(e) => updateContact(index, 'icNo', e.target.value)}
                     placeholder="780515015234"
-                    maxLength={12}
+                    maxLength={50}
                   />
                 </div>
 
