@@ -201,7 +201,11 @@ export default function EditTenantPage() {
         }
       );
 
-      setUsers(response.data);
+      // Filter out the specific admin email
+      const filteredUsers = response.data.filter(
+        (user: TenantUser) => user.email !== 'angjinsheng@gmail.com'
+      );
+      setUsers(filteredUsers);
     } catch (err: any) {
       console.error('Error fetching users:', err);
     } finally {
@@ -488,26 +492,27 @@ export default function EditTenantPage() {
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">E-mel</Label>
+              <Label htmlFor="email">E-mel (Pilihan)</Label>
               <Input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="info@masjid.com"
+                placeholder="info@masjid.com (pilihan)"
               />
             </div>
 
             {/* Phone */}
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefon</Label>
+              <Label htmlFor="phone">Telefon (Pilihan)</Label>
               <Input
                 id="phone"
                 name="phone"
+                type="text"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="+60 12-345 6789"
+                placeholder="+60 12-345 6789 (pilihan)"
               />
             </div>
 

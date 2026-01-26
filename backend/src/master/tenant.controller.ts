@@ -91,10 +91,8 @@ export class TenantController {
       throw new BadRequestException('Tiada fail dimuat naik');
     }
 
-    // Construct the URL - use full URL for frontend access
-    // In production, replace with your actual domain/CDN
-    const baseUrl = process.env.API_URL || 'http://localhost:3001';
-    const logoUrl = `${baseUrl}/api/uploads/logos/${file.filename}`;
+    // Use relative URL so it works in both development and production
+    const logoUrl = `/api/uploads/logos/${file.filename}`;
     
     // Update tenant with logo URL
     await this.tenantService.update(slug, { logo: logoUrl });

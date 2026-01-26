@@ -403,14 +403,14 @@ export default function CreateTenantPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-mel</Label>
+                  <Label htmlFor="email">E-mel (Pilihan)</Label>
                   <Input
                     id="email"
                     name="email"
-                    type="email"
+                    type="text"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="masjid@example.com"
+                    placeholder="masjid@example.com (pilihan)"
                   />
                 </div>
 
@@ -520,14 +520,14 @@ export default function CreateTenantPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="adminEmail">E-mel Admin</Label>
+                  <Label htmlFor="adminEmail">E-mel Admin (Pilihan)</Label>
                   <Input
                     id="adminEmail"
                     name="adminEmail"
-                    type="email"
+                    type="text"
                     value={formData.adminEmail}
                     onChange={handleChange}
-                    placeholder="admin@masjid.com"
+                    placeholder="admin@masjid.com (pilihan)"
                   />
                 </div>
               </div>
