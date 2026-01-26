@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useTenant } from '@/context/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,11 +13,17 @@ import Image from 'next/image';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { branding, isTenant, tenantInfo } = useTenant();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Tenant display info
+  const masjidName = branding?.name || (isTenant ? tenantInfo.slug.toUpperCase() : 'MASJID AL-HUDA PADANG MATSIRAT');
+  const masjidLogo = branding?.logo || '/logo.png';
+  const primaryColor = branding?.primaryColor || '#16a34a';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,17 +45,21 @@ export default function LoginPage() {
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
             <Image
-              src="/logo.png"
-              alt="Masjid Al-Huda Logo"
+              src={masjidLogo}
+              alt={`${masjidName} Logo`}
               width={120}
               height={120}
               className="object-contain"
               priority
+              unoptimized={masjidLogo.startsWith('/api/')}
             />
           </div>
           <div className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              MASJID AL-HUDA PADANG MATSIRAT
+            <CardTitle 
+              className="text-2xl font-bold text-gray-900"
+              style={{ color: isTenant ? primaryColor : undefined }}
+            >
+              {masjidName}
             </CardTitle>
             <CardDescription className="mt-2">
               Sistem Bancian Anak Kariah
@@ -106,7 +117,10 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full"
+              style={{ 
+                backgroundColor: isTenant ? primaryColor : '#16a34a',
+              }}
               disabled={loading}
             >
               {loading ? (

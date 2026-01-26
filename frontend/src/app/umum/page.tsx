@@ -236,7 +236,8 @@ export default function UmumDashboardPage() {
               width={40} 
               height={40} 
               className="object-contain" 
-              priority 
+              priority
+              unoptimized={masjidLogo.startsWith('/api/')}
             />
             <div className="min-w-0">
               <h1 
