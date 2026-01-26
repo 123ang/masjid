@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'mkcs-backend',
+      name: 'masjid-backend',
       script: './dist/src/main.js',
       cwd: './backend',
       instances: 1,
@@ -19,7 +19,7 @@ module.exports = {
       max_memory_restart: '1G'
     },
     {
-      name: 'mkcs-frontend',
+      name: 'masjid-frontend',
       script: 'node_modules/next/dist/bin/next',
       args: 'start',
       cwd: './frontend',
